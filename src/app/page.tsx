@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import confetti from 'canvas-confetti';
 import {
   Trophy,
@@ -48,6 +49,8 @@ import {
 import { supabase } from '@/lib/supabase';
 
 export default function MatchSetupWizard() {
+  const router = useRouter();
+
   // Step navigation (1: Match Info, 2: Teams & Squads, 3: Toss & Conditions, 4: Starting Lineup)
   const [currentStep, setCurrentStep] = useState<number>(1);
 
@@ -348,11 +351,31 @@ export default function MatchSetupWizard() {
       // Fallback
     }
 
-    setIsLiveActive(true);
-    setLiveRuns(0);
-    setLiveWickets(0);
-    setLiveLegalBalls(0);
-    setLiveBallHistory([]);
+    const matchId = '5';
+    const currentStriker = battingPlaying11.find((p) => p.id === strikerId) || battingPlaying11[0];
+    const currentNonStriker = battingPlaying11.find((p) => p.id === nonStrikerId) || battingPlaying11[1];
+    const currentBowler = bowlingPlaying11.find((p) => p.id === bowlerId) || bowlingPlaying11[0];
+
+    const matchData = {
+      matchId,
+      tournament: tournaments.find((t) => t.id === selectedTournament)?.name || 'SPIT Premier League 2026',
+      team1,
+      team2,
+      battingTeamName: battingTeam.name,
+      bowlingTeamName: bowlingTeam.name,
+      totalOvers: matchFormat === 'T20' ? 20 : matchFormat === 'ODI' ? 50 : customOvers,
+      striker: currentStriker,
+      nonStriker: currentNonStriker,
+      bowler: currentBowler,
+      battingSquad: battingPlaying11.filter(
+        (p) => p.id !== currentStriker?.id && p.id !== currentNonStriker?.id
+      ),
+      bowlingSquad: bowlingPlaying11
+    };
+
+    try {
+      localStorage.setItem(`cricket_match_${matchId}`, JSON.stringify(matchData));
+    } catch {}
 
     try {
       await supabase.from('matches').insert([
@@ -371,6 +394,8 @@ export default function MatchSetupWizard() {
     } catch {
       // optional
     }
+
+    router.push(`/match/${matchId}`);
   };
 
   const recordBall = (type: '0' | '1' | '2' | '3' | '4' | '6' | 'W' | 'WD' | 'NB') => {
