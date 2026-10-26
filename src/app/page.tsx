@@ -37,7 +37,8 @@ import {
 import {
   TechTitansLogo,
   CodeStrikersLogo,
-  RoleBadge
+  RoleBadge,
+  CricketBallFormatIcon
 } from '@/components/CricketIcons';
 
 import { supabase } from '@/lib/supabase';
@@ -271,201 +272,198 @@ export default function MatchSetupWizard() {
   const { title: heroTitle, subtitle: heroSubtitle } = getStepTitle();
 
   return (
-    <main className="min-h-screen w-full bg-[#f8fafc] flex flex-col m-0 p-0">
+    <main className="min-h-screen w-full bg-[#f0f4f9] flex flex-col items-center justify-start m-0 p-0 select-none">
       {/* ========================================================================= */}
-      {/* THE MAIN TAB CONTAINER: OCCUPIES THE ENTIRE SPACE (FULL VIEWPORT) */}
+      {/* HERO SECTION WITH PANORAMIC STADIUM BACKGROUND & CRICKET BALL */}
       {/* ========================================================================= */}
-      <div className="w-full min-h-screen bg-white flex flex-col flex-1 shadow-sm">
-        
-        {/* UPPER HERO SECTION (STADIUM BACKGROUND SPANNING FULL WIDTH) */}
-        <div className="relative w-full h-[240px] sm:h-[280px] md:h-[310px] overflow-hidden select-none shrink-0">
-          {/* Stadium background image inside the top of the card */}
-          <div
-            className="absolute inset-0 bg-cover bg-[right_30%] sm:bg-[center_top] bg-no-repeat"
-            style={{ backgroundImage: `url('/stadium-bg.png')` }}
-          />
+      <div className="relative w-full h-[250px] sm:h-[270px] md:h-[290px] overflow-hidden select-none">
+        {/* Background Image: public/stadium-bg.png positioned so the ball and floodlights frame the right side */}
+        <div
+          className="absolute inset-0 bg-cover bg-[position:88%_top] sm:bg-[position:90%_top] md:bg-[position:89%_top] bg-no-repeat"
+          style={{ backgroundImage: `url('/stadium-bg.png')` }}
+        />
 
-          {/* Semi-transparent dark overlay for top navbar contrast */}
-          <div className="absolute inset-0 bg-gradient-to-b from-blue-950/60 via-slate-950/25 to-transparent pointer-events-none" />
+        {/* Soft gradient overlay for optimal text legibility */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#020b1c]/65 via-[#020b1c]/25 to-[#020b1c]/45 pointer-events-none" />
 
-          {/* Stepper Navigation Bar and Hero Title */}
-          <div className="relative z-10 w-full max-w-7xl mx-auto h-full px-5 sm:px-10 lg:px-14 pt-5 sm:pt-6 pb-7 sm:pb-9 flex flex-col justify-between">
-            {/* Top Stepper Nav */}
-            <div className="flex items-center justify-center gap-2 sm:gap-4 text-white text-xs sm:text-sm font-medium">
-              {/* Step 1: Match Info */}
-              <div
-                onClick={() => {
-                  setIsLiveActive(false);
-                  setCurrentStep(1);
-                }}
-                className="flex flex-col items-center cursor-pointer group"
-              >
-                <div className="flex items-center gap-2">
-                  <div
-                    className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center font-bold text-xs transition shadow-sm ${
-                      currentStep === 1
-                        ? 'bg-white text-blue-600 shadow-md ring-2 ring-white/60'
-                        : currentStep > 1
-                        ? 'bg-emerald-500 text-white'
-                        : 'bg-slate-900/40 text-white/90 border border-white/30 backdrop-blur-md'
-                    }`}
-                  >
-                    {currentStep > 1 ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : '1'}
-                  </div>
-                  <span
-                    className={`text-xs sm:text-sm tracking-wide ${
-                      currentStep === 1 ? 'font-bold text-white' : 'font-medium text-white/80'
-                    }`}
-                  >
-                    Match Info
-                  </span>
-                </div>
-                {/* Active Underline Indicator */}
+        {/* Content: Stepper at top, Title & Subtitle at bottom */}
+        <div className="relative z-10 w-full max-w-[1060px] mx-auto h-full px-4 sm:px-6 pt-4 pb-12 sm:pb-14 flex flex-col justify-between">
+          {/* Top Stepper Nav */}
+          <div className="flex items-center justify-center gap-2 sm:gap-4 text-white text-xs sm:text-sm font-medium">
+            {/* Step 1: Match Info */}
+            <div
+              onClick={() => {
+                setIsLiveActive(false);
+                setCurrentStep(1);
+              }}
+              className="flex flex-col items-center cursor-pointer group"
+            >
+              <div className="flex items-center gap-2 pb-1.5">
                 <div
-                  className={`h-[2px] rounded-full transition-all duration-300 mt-1 ${
-                    currentStep === 1 ? 'w-full bg-[#0066FF]' : 'w-0 bg-transparent'
+                  className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-xs sm:text-sm transition ${
+                    currentStep === 1
+                      ? 'bg-[#0066FF] text-white shadow-md'
+                      : currentStep > 1
+                      ? 'bg-emerald-500 text-white'
+                      : 'bg-[#152744]/80 text-white/90 border border-white/25 backdrop-blur-xs'
                   }`}
-                />
-              </div>
-
-              {/* Separator Line */}
-              <span className="w-4 sm:w-7 h-[1px] bg-white/40 self-center -mt-1.5" />
-
-              {/* Step 2: Teams & Squads */}
-              <div
-                onClick={() => {
-                  setIsLiveActive(false);
-                  setCurrentStep(2);
-                }}
-                className="flex flex-col items-center cursor-pointer group"
-              >
-                <div className="flex items-center gap-2">
-                  <div
-                    className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center font-bold text-xs transition shadow-sm ${
-                      currentStep === 2
-                        ? 'bg-white text-blue-600 shadow-md ring-2 ring-white/60'
-                        : currentStep > 2
-                        ? 'bg-emerald-500 text-white'
-                        : 'bg-slate-900/40 text-white/90 border border-white/30 backdrop-blur-md'
-                    }`}
-                  >
-                    {currentStep > 2 ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : '2'}
-                  </div>
-                  <span
-                    className={`text-xs sm:text-sm tracking-wide ${
-                      currentStep === 2 ? 'font-bold text-white' : 'font-medium text-white/80'
-                    }`}
-                  >
-                    Teams & Squads
-                  </span>
+                >
+                  {currentStep > 1 ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : '1'}
                 </div>
-                <div
-                  className={`h-[2px] rounded-full transition-all duration-300 mt-1 ${
-                    currentStep === 2 ? 'w-full bg-[#0066FF]' : 'w-0 bg-transparent'
+                <span
+                  className={`text-xs sm:text-sm tracking-wide ${
+                    currentStep === 1 ? 'font-semibold text-white' : 'font-medium text-white/80'
                   }`}
-                />
+                >
+                  Match Info
+                </span>
               </div>
-
-              {/* Separator Line */}
-              <span className="w-4 sm:w-7 h-[1px] bg-white/40 self-center -mt-1.5" />
-
-              {/* Step 3: Toss & Conditions */}
+              {/* Active Underline Indicator */}
               <div
-                onClick={() => {
-                  setIsLiveActive(false);
-                  setCurrentStep(3);
-                }}
-                className="flex flex-col items-center cursor-pointer group"
-              >
-                <div className="flex items-center gap-2">
-                  <div
-                    className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center font-bold text-xs transition shadow-sm ${
-                      currentStep === 3
-                        ? 'bg-white text-blue-600 shadow-md ring-2 ring-white/60'
-                        : currentStep > 3
-                        ? 'bg-emerald-500 text-white'
-                        : 'bg-slate-900/40 text-white/90 border border-white/30 backdrop-blur-md'
-                    }`}
-                  >
-                    {currentStep > 3 ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : '3'}
-                  </div>
-                  <span
-                    className={`text-xs sm:text-sm tracking-wide ${
-                      currentStep === 3 ? 'font-bold text-white' : 'font-medium text-white/80'
-                    }`}
-                  >
-                    Toss & Conditions
-                  </span>
-                </div>
-                <div
-                  className={`h-[2px] rounded-full transition-all duration-300 mt-1 ${
-                    currentStep === 3 ? 'w-full bg-[#0066FF]' : 'w-0 bg-transparent'
-                  }`}
-                />
-              </div>
-
-              {/* Separator Line */}
-              <span className="w-4 sm:w-7 h-[1px] bg-white/40 self-center -mt-1.5" />
-
-              {/* Step 4: Starting Lineup */}
-              <div
-                onClick={() => {
-                  setIsLiveActive(false);
-                  setCurrentStep(4);
-                }}
-                className="flex flex-col items-center cursor-pointer group"
-              >
-                <div className="flex items-center gap-2">
-                  <div
-                    className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center font-bold text-xs transition shadow-sm ${
-                      currentStep === 4
-                        ? 'bg-white text-blue-600 shadow-md ring-2 ring-white/60'
-                        : 'bg-slate-900/40 text-white/90 border border-white/30 backdrop-blur-md'
-                    }`}
-                  >
-                    4
-                  </div>
-                  <span
-                    className={`text-xs sm:text-sm tracking-wide ${
-                      currentStep === 4 ? 'font-bold text-white' : 'font-medium text-white/80'
-                    }`}
-                  >
-                    Starting Lineup
-                  </span>
-                </div>
-                <div
-                  className={`h-[2px] rounded-full transition-all duration-300 mt-1 ${
-                    currentStep === 4 ? 'w-full bg-[#0066FF]' : 'w-0 bg-transparent'
-                  }`}
-                />
-              </div>
+                className={`h-[2.5px] rounded-full transition-all duration-300 ${
+                  currentStep === 1 ? 'w-full bg-[#0066FF]' : 'w-0 bg-transparent'
+                }`}
+              />
             </div>
 
-            {/* Bottom Title on Hero */}
-            <div className="mb-2">
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white tracking-tight drop-shadow-md">
-                {heroTitle}
-              </h2>
-              <p className="text-white/90 text-xs sm:text-sm font-normal mt-0.5 drop-shadow">
-                {heroSubtitle}
-              </p>
+            {/* Separator Line */}
+            <span className="w-5 sm:w-8 h-[1px] bg-white/35 self-center -mt-2" />
+
+            {/* Step 2: Teams & Squads */}
+            <div
+              onClick={() => {
+                setIsLiveActive(false);
+                setCurrentStep(2);
+              }}
+              className="flex flex-col items-center cursor-pointer group"
+            >
+              <div className="flex items-center gap-2 pb-1.5">
+                <div
+                  className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-xs sm:text-sm transition ${
+                    currentStep === 2
+                      ? 'bg-[#0066FF] text-white shadow-md'
+                      : currentStep > 2
+                      ? 'bg-emerald-500 text-white'
+                      : 'bg-[#152744]/80 text-white/90 border border-white/25 backdrop-blur-xs'
+                  }`}
+                >
+                  {currentStep > 2 ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : '2'}
+                </div>
+                <span
+                  className={`text-xs sm:text-sm tracking-wide ${
+                    currentStep === 2 ? 'font-semibold text-white' : 'font-medium text-white/80'
+                  }`}
+                >
+                  Teams & Squads
+                </span>
+              </div>
+              <div
+                className={`h-[2.5px] rounded-full transition-all duration-300 ${
+                  currentStep === 2 ? 'w-full bg-[#0066FF]' : 'w-0 bg-transparent'
+                }`}
+              />
+            </div>
+
+            {/* Separator Line */}
+            <span className="w-5 sm:w-8 h-[1px] bg-white/35 self-center -mt-2" />
+
+            {/* Step 3: Toss & Conditions */}
+            <div
+              onClick={() => {
+                setIsLiveActive(false);
+                setCurrentStep(3);
+              }}
+              className="flex flex-col items-center cursor-pointer group"
+            >
+              <div className="flex items-center gap-2 pb-1.5">
+                <div
+                  className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-xs sm:text-sm transition ${
+                    currentStep === 3
+                      ? 'bg-[#0066FF] text-white shadow-md'
+                      : currentStep > 3
+                      ? 'bg-emerald-500 text-white'
+                      : 'bg-[#152744]/80 text-white/90 border border-white/25 backdrop-blur-xs'
+                  }`}
+                >
+                  {currentStep > 3 ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : '3'}
+                </div>
+                <span
+                  className={`text-xs sm:text-sm tracking-wide ${
+                    currentStep === 3 ? 'font-semibold text-white' : 'font-medium text-white/80'
+                  }`}
+                >
+                  Toss & Conditions
+                </span>
+              </div>
+              <div
+                className={`h-[2.5px] rounded-full transition-all duration-300 ${
+                  currentStep === 3 ? 'w-full bg-[#0066FF]' : 'w-0 bg-transparent'
+                }`}
+              />
+            </div>
+
+            {/* Separator Line */}
+            <span className="w-5 sm:w-8 h-[1px] bg-white/35 self-center -mt-2" />
+
+            {/* Step 4: Starting Lineup */}
+            <div
+              onClick={() => {
+                setIsLiveActive(false);
+                setCurrentStep(4);
+              }}
+              className="flex flex-col items-center cursor-pointer group"
+            >
+              <div className="flex items-center gap-2 pb-1.5">
+                <div
+                  className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-xs sm:text-sm transition ${
+                    currentStep === 4
+                      ? 'bg-[#0066FF] text-white shadow-md'
+                      : 'bg-[#152744]/80 text-white/90 border border-white/25 backdrop-blur-xs'
+                  }`}
+                >
+                  4
+                </div>
+                <span
+                  className={`text-xs sm:text-sm tracking-wide ${
+                    currentStep === 4 ? 'font-semibold text-white' : 'font-medium text-white/80'
+                  }`}
+                >
+                  Starting Lineup
+                </span>
+              </div>
+              <div
+                className={`h-[2.5px] rounded-full transition-all duration-300 ${
+                  currentStep === 4 ? 'w-full bg-[#0066FF]' : 'w-0 bg-transparent'
+                }`}
+              />
             </div>
           </div>
-        </div>
 
-        {/* ======================================================================= */}
-        {/* LOWER WHITE SECTION OF THE CARD (CURVES OVER THE HERO GRASS) */}
-        {/* ======================================================================= */}
-        <div className="relative bg-white rounded-t-[26px] sm:rounded-t-[34px] -mt-6 sm:-mt-8 z-10 px-5 sm:px-10 lg:px-14 pt-7 sm:pt-9 pb-12 shadow-xs flex-1 w-full">
-          <div className="w-full max-w-7xl mx-auto">
-            {/* STEP 1: MATCH INFO */}
+          {/* Hero Title & Subtitle */}
+          <div className="mb-1">
+            <h1 className="text-2xl sm:text-3xl md:text-[34px] font-extrabold text-white tracking-tight drop-shadow-md">
+              {heroTitle}
+            </h1>
+            <p className="text-white/90 text-xs sm:text-sm md:text-base font-normal mt-1 drop-shadow">
+              {heroSubtitle}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* FLOATING WHITE FORM CARD (MATCHING REFERENCE IMAGE 1:1) */}
+      {/* ========================================================================= */}
+      <div className="w-full max-w-[1060px] mx-auto px-4 sm:px-6 -mt-8 sm:-mt-10 mb-10 relative z-20">
+        <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl shadow-slate-200/80 border border-slate-100 p-5 sm:p-7 md:p-8">
+          {/* STEP 1: MATCH INFO */}
           {currentStep === 1 && !isLiveActive && (
             <div className="space-y-4 sm:space-y-5">
               {/* 1. Tournament Card */}
-              <div className="border border-slate-100 rounded-2xl p-4 sm:p-5 bg-white shadow-2xs hover:shadow-xs transition">
-                <div className="flex items-start gap-3 mb-3.5">
-                  <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-900 flex items-center justify-center shrink-0">
-                    <Trophy className="w-5 h-5 text-blue-950" />
+              <div className="bg-[#f8fafc] border border-[#edf2f7] rounded-2xl p-4 sm:p-5 transition">
+                <div className="flex items-start gap-3.5 mb-3.5">
+                  <div className="w-11 h-11 rounded-xl bg-[#f0f4fd] text-[#1e3a8a] flex items-center justify-center shrink-0">
+                    <Trophy className="w-5 h-5 text-[#1e3a8a]" />
                   </div>
                   <div>
                     <h3 className="font-bold text-slate-900 text-sm sm:text-base">Tournament</h3>
@@ -480,7 +478,7 @@ export default function MatchSetupWizard() {
                     <select
                       value={selectedTournament}
                       onChange={(e) => setSelectedTournament(e.target.value)}
-                      className="w-full appearance-none bg-white border border-slate-200 rounded-xl px-4 py-2.5 sm:py-3 text-sm text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10 cursor-pointer shadow-2xs"
+                      className="w-full appearance-none bg-white border border-[#e2e8f0] rounded-xl px-4 py-3 text-sm text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10 cursor-pointer shadow-2xs"
                     >
                       {tournaments.map((t) => (
                         <option key={t.id} value={t.id}>
@@ -494,19 +492,19 @@ export default function MatchSetupWizard() {
                   <button
                     type="button"
                     onClick={() => setShowTournamentModal(true)}
-                    className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 sm:py-3 rounded-xl border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 text-slate-800 text-sm font-semibold transition shadow-2xs whitespace-nowrap cursor-pointer"
+                    className="inline-flex items-center justify-center gap-1.5 px-6 py-3 rounded-xl border border-[#e2e8f0] hover:border-slate-300 bg-white hover:bg-slate-50 text-slate-800 text-sm font-semibold transition shadow-2xs whitespace-nowrap cursor-pointer"
                   >
-                    <Plus className="w-4 h-4 text-slate-700" />
+                    <Plus className="w-4 h-4 text-slate-700 stroke-[2.5]" />
                     <span>Create New Tournament</span>
                   </button>
                 </div>
               </div>
 
               {/* 2. Match Format Card */}
-              <div className="border border-slate-100 rounded-2xl p-4 sm:p-5 bg-white shadow-2xs hover:shadow-xs transition">
-                <div className="flex items-start gap-3 mb-3.5">
-                  <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-900 flex items-center justify-center shrink-0">
-                    <CircleDot className="w-5 h-5 text-blue-950" />
+              <div className="bg-[#f8fafc] border border-[#edf2f7] rounded-2xl p-4 sm:p-5 transition">
+                <div className="flex items-start gap-3.5 mb-3.5">
+                  <div className="w-11 h-11 rounded-xl bg-[#f0f4fd] text-[#1e3a8a] flex items-center justify-center shrink-0">
+                    <CricketBallFormatIcon className="w-6 h-6 text-[#1e3a8a]" />
                   </div>
                   <div>
                     <h3 className="font-bold text-slate-900 text-sm sm:text-base">Match Format</h3>
@@ -522,13 +520,13 @@ export default function MatchSetupWizard() {
                     onClick={() => setMatchFormat('T20')}
                     className={`flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition ${
                       matchFormat === 'T20'
-                        ? 'border-2 border-blue-400 bg-blue-50/20 text-blue-950 shadow-2xs'
-                        : 'border border-slate-200 hover:border-slate-300 text-slate-800 bg-white'
+                        ? 'border-2 border-blue-500 bg-[#f0f6ff] text-slate-900 shadow-2xs'
+                        : 'border border-[#e2e8f0] hover:border-slate-300 text-slate-800 bg-white'
                     }`}
                   >
                     <div
                       className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                        matchFormat === 'T20' ? 'border-blue-600' : 'border-slate-300'
+                        matchFormat === 'T20' ? 'border-blue-600' : 'border-slate-400'
                       }`}
                     >
                       {matchFormat === 'T20' && (
@@ -543,22 +541,22 @@ export default function MatchSetupWizard() {
                     onClick={() => setMatchFormat('ODI')}
                     className={`flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition ${
                       matchFormat === 'ODI'
-                        ? 'border-2 border-blue-400 bg-blue-50/20 text-blue-950 shadow-2xs'
-                        : 'border border-slate-200 hover:border-slate-300 text-slate-800 bg-white'
+                        ? 'border-2 border-blue-500 bg-[#f0f6ff] text-slate-900 shadow-2xs'
+                        : 'border border-[#e2e8f0] hover:border-slate-300 text-slate-800 bg-white'
                     }`}
                   >
                     <div
                       className={`w-4 h-4 rounded-full border flex items-center justify-center ${
                         matchFormat === 'ODI'
                           ? 'border-2 border-blue-600'
-                          : 'border-slate-300'
+                          : 'border-slate-400'
                       }`}
                     >
                       {matchFormat === 'ODI' && (
                         <div className="w-2 h-2 rounded-full bg-blue-600" />
                       )}
                     </div>
-                    <span className="text-sm font-semibold">ODI (50 ov)</span>
+                    <span className="text-sm font-bold">ODI (50 ov)</span>
                   </div>
 
                   {/* Custom Overs Option Pill */}
@@ -566,22 +564,22 @@ export default function MatchSetupWizard() {
                     onClick={() => setMatchFormat('Custom')}
                     className={`flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition ${
                       matchFormat === 'Custom'
-                        ? 'border-2 border-blue-400 bg-blue-50/20 text-blue-950 shadow-2xs'
-                        : 'border border-slate-200 hover:border-slate-300 text-slate-800 bg-white'
+                        ? 'border-2 border-blue-500 bg-[#f0f6ff] text-slate-900 shadow-2xs'
+                        : 'border border-[#e2e8f0] hover:border-slate-300 text-slate-800 bg-white'
                     }`}
                   >
                     <div
                       className={`w-4 h-4 rounded-full border flex items-center justify-center ${
                         matchFormat === 'Custom'
                           ? 'border-2 border-blue-600'
-                          : 'border-slate-300'
+                          : 'border-slate-400'
                       }`}
                     >
                       {matchFormat === 'Custom' && (
                         <div className="w-2 h-2 rounded-full bg-blue-600" />
                       )}
                     </div>
-                    <span className="text-sm font-semibold flex items-center gap-2">
+                    <span className="text-sm font-bold flex items-center gap-2">
                       Custom Overs
                       {matchFormat === 'Custom' && (
                         <input
@@ -591,7 +589,7 @@ export default function MatchSetupWizard() {
                           value={customOvers}
                           onChange={(e) => setCustomOvers(Number(e.target.value))}
                           onClick={(e) => e.stopPropagation()}
-                          className="w-14 px-2 py-0.5 text-xs border border-blue-400 rounded-md bg-white text-center font-bold focus:outline-none"
+                          className="w-14 px-2 py-0.5 text-xs border border-blue-500 rounded-md bg-white text-center font-bold focus:outline-none"
                         />
                       )}
                     </span>
@@ -602,10 +600,10 @@ export default function MatchSetupWizard() {
               {/* 3. Venue & City and Date & Time Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Venue & City */}
-                <div className="border border-slate-100 rounded-2xl p-4 sm:p-5 bg-white shadow-2xs flex flex-col justify-between">
-                  <div className="flex items-start gap-3 mb-3.5">
-                    <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-900 flex items-center justify-center shrink-0">
-                      <MapPin className="w-5 h-5 text-blue-950" />
+                <div className="bg-[#f8fafc] border border-[#edf2f7] rounded-2xl p-4 sm:p-5 flex flex-col justify-between">
+                  <div className="flex items-start gap-3.5 mb-3.5">
+                    <div className="w-11 h-11 rounded-xl bg-[#f0f4fd] text-[#1e3a8a] flex items-center justify-center shrink-0">
+                      <MapPin className="w-5 h-5 text-[#1e3a8a]" />
                     </div>
                     <div>
                       <h3 className="font-bold text-slate-900 text-sm sm:text-base">Venue & City</h3>
@@ -615,12 +613,12 @@ export default function MatchSetupWizard() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="relative">
+                  <div className="flex gap-3 items-center">
+                    <div className="relative flex-1">
                       <select
                         value={selectedVenue}
                         onChange={(e) => handleVenueChange(e.target.value)}
-                        className="w-full appearance-none bg-white border border-slate-200 rounded-xl px-4 py-2.5 sm:py-3 text-sm text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 pr-9 cursor-pointer shadow-2xs"
+                        className="w-full appearance-none bg-white border border-[#e2e8f0] rounded-xl px-4 py-3 text-sm text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 pr-9 cursor-pointer shadow-2xs"
                       >
                         {venues.map((v) => (
                           <option key={v.id} value={v.id}>
@@ -628,23 +626,25 @@ export default function MatchSetupWizard() {
                           </option>
                         ))}
                       </select>
-                      <ChevronDown className="w-4 h-4 text-slate-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <ChevronDown className="w-4 h-4 text-slate-500 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                     </div>
 
-                    <input
-                      type="text"
-                      readOnly
-                      value={city}
-                      className="w-full bg-[#f8fafc] border border-slate-200 rounded-xl px-4 py-2.5 sm:py-3 text-sm text-slate-700 font-medium focus:outline-none shadow-2xs"
-                    />
+                    <div className="w-32 sm:w-36">
+                      <input
+                        type="text"
+                        readOnly
+                        value={city}
+                        className="w-full bg-white border border-[#e2e8f0] rounded-xl px-4 py-3 text-sm text-slate-800 font-medium text-center focus:outline-none shadow-2xs"
+                      />
+                    </div>
                   </div>
                 </div>
 
                 {/* Date & Time */}
-                <div className="border border-slate-100 rounded-2xl p-4 sm:p-5 bg-white shadow-2xs flex flex-col justify-between">
-                  <div className="flex items-start gap-3 mb-3.5">
-                    <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-900 flex items-center justify-center shrink-0">
-                      <CalendarIcon className="w-5 h-5 text-blue-950" />
+                <div className="bg-[#f8fafc] border border-[#edf2f7] rounded-2xl p-4 sm:p-5 flex flex-col justify-between">
+                  <div className="flex items-start gap-3.5 mb-3.5">
+                    <div className="w-11 h-11 rounded-xl bg-[#f0f4fd] text-[#1e3a8a] flex items-center justify-center shrink-0">
+                      <CalendarIcon className="w-5 h-5 text-[#1e3a8a]" />
                     </div>
                     <div>
                       <h3 className="font-bold text-slate-900 text-sm sm:text-base">Date & Time</h3>
@@ -655,14 +655,14 @@ export default function MatchSetupWizard() {
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="relative flex items-center bg-white border border-slate-200 rounded-xl px-4 py-2.5 sm:py-3 shadow-2xs">
+                    <div className="relative flex items-center bg-white border border-[#e2e8f0] rounded-xl px-4 py-3 shadow-2xs">
                       <span className="text-sm font-semibold text-slate-800 flex-1">
                         26 Oct 2026
                       </span>
                       <CalendarIcon className="w-4 h-4 text-slate-500" />
                     </div>
 
-                    <div className="relative flex items-center bg-white border border-slate-200 rounded-xl px-4 py-2.5 sm:py-3 shadow-2xs">
+                    <div className="relative flex items-center bg-white border border-[#e2e8f0] rounded-xl px-4 py-3 shadow-2xs">
                       <Clock className="w-4 h-4 text-slate-500 mr-2.5" />
                       <span className="text-sm font-semibold text-slate-800">
                         06:30 PM
@@ -673,14 +673,14 @@ export default function MatchSetupWizard() {
               </div>
 
               {/* Bottom CTA Right Button */}
-              <div className="flex justify-end pt-3">
+              <div className="flex justify-end pt-2">
                 <button
                   type="button"
                   onClick={() => setCurrentStep(2)}
-                  className="inline-flex items-center gap-2 bg-[#0066FF] hover:bg-[#0052cc] text-white font-medium text-sm sm:text-base px-7 py-2.5 sm:py-3 rounded-xl shadow-md hover:shadow-lg transition cursor-pointer active:scale-[0.99]"
+                  className="inline-flex items-center gap-2 bg-[#0066FF] hover:bg-[#0052cc] text-white font-semibold text-sm px-6 py-3 rounded-xl shadow-md hover:shadow-lg transition cursor-pointer active:scale-[0.99]"
                 >
                   <span>Next: Teams & Squads</span>
-                  <ArrowRight className="w-4 h-4" />
+                  <ArrowRight className="w-4 h-4 stroke-[2.5]" />
                 </button>
               </div>
             </div>
@@ -1486,7 +1486,6 @@ export default function MatchSetupWizard() {
               </div>
             </div>
           )}
-          </div>
         </div>
       </div>
 

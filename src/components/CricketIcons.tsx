@@ -1,5 +1,15 @@
 import React from 'react';
 
+// Slashed circle icon for Match Format exactly matching reference image
+export function CricketBallFormatIcon({ className = "w-5 h-5" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none">
+      <circle cx="12" cy="12" r="9.5" fill="#0f172a" />
+      <line x1="5.5" y1="18.5" x2="18.5" y2="5.5" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 // Blue circle logo with swooshes (Tech Titans)
 export function TechTitansLogo({ className = "w-12 h-12" }: { className?: string }) {
   return (
