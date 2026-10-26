@@ -20,7 +20,11 @@ import {
   User,
   Sun,
   Flame,
-  X
+  X,
+  Edit2,
+  Trash2,
+  Users,
+  UserPlus
 } from 'lucide-react';
 
 import {
@@ -93,6 +97,26 @@ export default function MatchSetupWizard() {
 
   const [showChangeTeamModal, setShowChangeTeamModal] = useState<'team1' | 'team2' | null>(null);
 
+  // Edit / Add Player Modal state
+  const [editingPlayer, setEditingPlayer] = useState<{
+    teamId: string;
+    player: {
+      id: string;
+      number: number;
+      name: string;
+      role: 'Batter' | 'All-rounder' | 'Bowler' | 'Wicketkeeper';
+      battingStyle?: string;
+      bowlingStyle?: string;
+    };
+    isNew?: boolean;
+  } | null>(null);
+
+  const [editPlayerName, setEditPlayerName] = useState<string>('');
+  const [editPlayerRole, setEditPlayerRole] = useState<'Batter' | 'All-rounder' | 'Bowler' | 'Wicketkeeper'>('Batter');
+  const [editPlayerNumber, setEditPlayerNumber] = useState<number>(1);
+  const [editBattingStyle, setEditBattingStyle] = useState<string>('Right-hand bat');
+  const [editBowlingStyle, setEditBowlingStyle] = useState<string>('Right-arm medium');
+
   // Live Scoring View
   const [isLiveActive, setIsLiveActive] = useState<boolean>(false);
   const [liveRuns, setLiveRuns] = useState<number>(0);
@@ -100,7 +124,7 @@ export default function MatchSetupWizard() {
   const [liveLegalBalls, setLiveLegalBalls] = useState<number>(0);
   const [liveBallHistory, setLiveBallHistory] = useState<string[]>([]);
 
-  // Initialize Playing 11 for Team 1 and Team 2 (first 11 players selected by default)
+  // Initialize Playing Squad for Team 1 and Team 2 (first 11 selected by default if available)
   useEffect(() => {
     const t1 = teams.find((t) => t.id === team1Id);
     if (t1) {
@@ -150,31 +174,160 @@ export default function MatchSetupWizard() {
     if (battingPlaying11.length >= 2) {
       setStrikerId(battingPlaying11[0].id);
       setNonStrikerId(battingPlaying11[1].id);
+    } else if (battingPlaying11.length === 1) {
+      setStrikerId(battingPlaying11[0].id);
+      setNonStrikerId(battingPlaying11[0].id);
     }
     if (bowlingPlaying11.length > 0) {
       const bowler = bowlingPlaying11.find((p) => p.role === 'Bowler') || bowlingPlaying11[0];
       setBowlerId(bowler.id);
     }
-  }, [battingTeam.id, bowlingTeam.id]);
+  }, [battingTeam.id, bowlingTeam.id, team1SelectedPlayerIds, team2SelectedPlayerIds]);
 
+  // Custom player selection (no hardcoded 11-player constraint)
   const togglePlayerSelection = (teamNum: 1 | 2, playerId: string) => {
     if (teamNum === 1) {
       if (team1SelectedPlayerIds.includes(playerId)) {
         setTeam1SelectedPlayerIds(team1SelectedPlayerIds.filter((id) => id !== playerId));
       } else {
-        if (team1SelectedPlayerIds.length < 11) {
-          setTeam1SelectedPlayerIds([...team1SelectedPlayerIds, playerId]);
-        }
+        setTeam1SelectedPlayerIds([...team1SelectedPlayerIds, playerId]);
       }
     } else {
       if (team2SelectedPlayerIds.includes(playerId)) {
         setTeam2SelectedPlayerIds(team2SelectedPlayerIds.filter((id) => id !== playerId));
       } else {
-        if (team2SelectedPlayerIds.length < 11) {
-          setTeam2SelectedPlayerIds([...team2SelectedPlayerIds, playerId]);
-        }
+        setTeam2SelectedPlayerIds([...team2SelectedPlayerIds, playerId]);
       }
     }
+  };
+
+  const selectAllPlayers = (teamNum: 1 | 2) => {
+    const targetTeam = teamNum === 1 ? team1 : team2;
+    const allIds = targetTeam.players.map((p) => p.id);
+    if (teamNum === 1) {
+      setTeam1SelectedPlayerIds(allIds);
+    } else {
+      setTeam2SelectedPlayerIds(allIds);
+    }
+  };
+
+  const clearSelectedPlayers = (teamNum: 1 | 2) => {
+    if (teamNum === 1) {
+      setTeam1SelectedPlayerIds([]);
+    } else {
+      setTeam2SelectedPlayerIds([]);
+    }
+  };
+
+  // Open Edit Player Modal
+  const openEditPlayer = (teamId: string, player: { id: string; number: number; name: string; role: 'Batter' | 'All-rounder' | 'Bowler' | 'Wicketkeeper'; battingStyle?: string; bowlingStyle?: string; }) => {
+    setEditingPlayer({ teamId, player, isNew: false });
+    setEditPlayerName(player.name);
+    setEditPlayerRole(player.role);
+    setEditPlayerNumber(player.number);
+    setEditBattingStyle(player.battingStyle || 'Right-hand bat');
+    setEditBowlingStyle(player.bowlingStyle || 'Right-arm medium');
+  };
+
+  // Open Add Player Modal
+  const openAddPlayer = (teamId: string) => {
+    const targetTeam = teams.find((t) => t.id === teamId);
+    const nextNumber = (targetTeam?.players.length || 0) + 1;
+    const dummy = {
+      id: '',
+      number: nextNumber,
+      name: '',
+      role: 'Batter' as const,
+      battingStyle: 'Right-hand bat',
+      bowlingStyle: 'Right-arm medium'
+    };
+    setEditingPlayer({ teamId, player: dummy, isNew: true });
+    setEditPlayerName('');
+    setEditPlayerRole('Batter');
+    setEditPlayerNumber(nextNumber);
+    setEditBattingStyle('Right-hand bat');
+    setEditBowlingStyle('Right-arm medium');
+  };
+
+  // Save Player Changes (Add or Edit)
+  const handleSavePlayer = () => {
+    if (!editingPlayer || !editPlayerName.trim()) return;
+
+    setTeams((prevTeams) =>
+      prevTeams.map((t) => {
+        if (t.id !== editingPlayer.teamId) return t;
+
+        if (editingPlayer.isNew) {
+          const newPlayer = {
+            id: `p-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+            number: editPlayerNumber || t.players.length + 1,
+            name: editPlayerName.trim(),
+            role: editPlayerRole,
+            battingStyle: editBattingStyle,
+            bowlingStyle: editBowlingStyle
+          };
+
+          // Auto-select newly created player
+          if (editingPlayer.teamId === team1Id) {
+            setTeam1SelectedPlayerIds((prev) => [...prev, newPlayer.id]);
+          } else if (editingPlayer.teamId === team2Id) {
+            setTeam2SelectedPlayerIds((prev) => [...prev, newPlayer.id]);
+          }
+
+          return {
+            ...t,
+            players: [...t.players, newPlayer]
+          };
+        } else {
+          return {
+            ...t,
+            players: t.players.map((p) =>
+              p.id === editingPlayer.player.id
+                ? {
+                    ...p,
+                    number: editPlayerNumber,
+                    name: editPlayerName.trim(),
+                    role: editPlayerRole,
+                    battingStyle: editBattingStyle,
+                    bowlingStyle: editBowlingStyle
+                  }
+                : p
+            )
+          };
+        }
+      })
+    );
+
+    setEditingPlayer(null);
+  };
+
+  // Delete Player from Team
+  const handleDeletePlayer = (teamId: string, playerId: string) => {
+    setTeams((prevTeams) =>
+      prevTeams.map((t) => {
+        if (t.id !== teamId) return t;
+        return {
+          ...t,
+          players: t.players.filter((p) => p.id !== playerId)
+        };
+      })
+    );
+
+    if (teamId === team1Id) {
+      setTeam1SelectedPlayerIds((prev) => prev.filter((id) => id !== playerId));
+    } else if (teamId === team2Id) {
+      setTeam2SelectedPlayerIds((prev) => prev.filter((id) => id !== playerId));
+    }
+  };
+
+  // Helper to compute squad formation counts
+  const getFormationSummary = (team: typeof team1, selectedIds: string[]) => {
+    const selected = team.players.filter((p) => selectedIds.includes(p.id));
+    const batters = selected.filter((p) => p.role === 'Batter').length;
+    const bowlers = selected.filter((p) => p.role === 'Bowler').length;
+    const allRounders = selected.filter((p) => p.role === 'All-rounder').length;
+    const keepers = selected.filter((p) => p.role === 'Wicketkeeper').length;
+    return { batters, bowlers, allRounders, keepers, total: selected.length };
   };
 
   const renderTeamLogo = (badgeType: string, className = 'w-10 h-10') => {
@@ -428,7 +581,7 @@ export default function MatchSetupWizard() {
           </div>
 
           {/* Hero Title & Subtitle */}
-          <div className="mb-1">
+          <div className="mb-5 sm:mb-6 md:mb-7">
             <h1 className="text-2xl sm:text-3xl md:text-[34px] font-extrabold text-white tracking-tight drop-shadow-md">
               {heroTitle}
             </h1>
@@ -678,188 +831,376 @@ export default function MatchSetupWizard() {
                 </div>
 
                 {/* LEFT: Team 1 (Home) */}
-                <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex flex-col">
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-                      <MapPin className="w-3.5 h-3.5 text-blue-600" />
-                      Team 1 (Home)
-                    </span>
+                {(() => {
+                  const f1 = getFormationSummary(team1, team1SelectedPlayerIds);
+                  return (
+                    <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-100 shadow-sm flex flex-col">
+                      <div className="flex items-center justify-between mb-3.5">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                          <MapPin className="w-3.5 h-3.5 text-blue-600" />
+                          Team 1 (Home)
+                        </span>
 
-                    <button
-                      type="button"
-                      onClick={() => setShowChangeTeamModal('team1')}
-                      className="text-xs font-semibold text-slate-600 hover:text-slate-900 border border-slate-200 hover:border-slate-300 rounded-lg px-3 py-1 bg-white hover:bg-slate-50 transition shadow-2xs"
-                    >
-                      Change Team
-                    </button>
-                  </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => openAddPlayer(team1.id)}
+                            className="inline-flex items-center gap-1 text-xs font-semibold text-blue-700 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg px-2.5 py-1 transition cursor-pointer"
+                          >
+                            <UserPlus className="w-3.5 h-3.5" />
+                            <span>Add Player</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setShowChangeTeamModal('team1')}
+                            className="text-xs font-semibold text-slate-600 hover:text-slate-900 border border-slate-200 hover:border-slate-300 rounded-lg px-2.5 py-1 bg-white hover:bg-slate-50 transition shadow-2xs cursor-pointer"
+                          >
+                            Change Team
+                          </button>
+                        </div>
+                      </div>
 
-                  <div className="flex items-center gap-3.5 mb-5 pb-4 border-b border-slate-100">
-                    {renderTeamLogo(team1.badgeType, 'w-12 h-12')}
-                    <div>
-                      <h4 className="text-xl font-extrabold text-slate-900 tracking-tight leading-none">
-                        {team1.name}
-                      </h4>
-                      <button
-                        type="button"
-                        onClick={() => setShowTeamModal(true)}
-                        className="text-xs text-blue-600 hover:underline mt-1 font-semibold inline-block"
-                      >
-                        + Add New Team
-                      </button>
-                    </div>
-                  </div>
+                      <div className="flex items-center gap-3.5 mb-4 pb-3.5 border-b border-slate-100">
+                        {renderTeamLogo(team1.badgeType, 'w-12 h-12')}
+                        <div className="flex-1">
+                          <h4 className="text-xl font-extrabold text-slate-900 tracking-tight leading-none">
+                            {team1.name}
+                          </h4>
+                          <p className="text-xs text-slate-500 mt-1">
+                            {team1.city} • {team1.players.length} Total Squad Members
+                          </p>
+                        </div>
+                      </div>
 
-                  <div className="flex items-center justify-between mb-2.5">
-                    <h5 className="text-xs font-bold uppercase tracking-wider text-slate-700">
-                      Select Playing 11 ({team1.name})
-                    </h5>
-                    <span
-                      className={`text-xs font-semibold px-2 py-0.5 rounded-full ${team1SelectedPlayerIds.length === 11
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : 'bg-amber-100 text-amber-800'
-                        }`}
-                    >
-                      {team1SelectedPlayerIds.length}/11 selected
-                    </span>
-                  </div>
-
-                  <div className="border border-slate-200 rounded-xl overflow-hidden max-h-[300px] overflow-y-auto">
-                    <table className="w-full text-left text-xs">
-                      <thead className="bg-slate-50 text-slate-600 uppercase font-bold border-b border-slate-200 sticky top-0">
-                        <tr>
-                          <th className="px-3 py-2 w-8 text-center">#</th>
-                          <th className="px-3 py-2">Player Name</th>
-                          <th className="px-3 py-2">Role</th>
-                          <th className="px-3 py-2 w-10 text-center">Select</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 font-medium">
-                        {team1.players.map((player) => {
-                          const isSelected = team1SelectedPlayerIds.includes(player.id);
-                          return (
-                            <tr
-                              key={player.id}
-                              onClick={() => togglePlayerSelection(1, player.id)}
-                              className={`cursor-pointer transition hover:bg-slate-50 ${isSelected ? 'bg-blue-50/30' : ''
-                                }`}
+                      {/* Formation Summary & Quick Controls */}
+                      <div className="mb-3 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <h5 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                            <Users className="w-3.5 h-3.5 text-blue-600" />
+                            <span>Playing Squad Lineup</span>
+                          </h5>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => selectAllPlayers(1)}
+                              className="text-[11px] font-semibold text-blue-600 hover:underline cursor-pointer"
                             >
-                              <td className="px-3 py-2.5 text-center text-slate-400 font-semibold">
-                                {player.number}
-                              </td>
-                              <td className="px-3 py-2.5 text-slate-900 font-bold">
-                                {player.name}
-                              </td>
-                              <td className="px-3 py-2.5">
-                                <RoleBadge role={player.role} />
-                              </td>
-                              <td className="px-3 py-2.5 text-center">
-                                <input
-                                  type="checkbox"
-                                  checked={isSelected}
-                                  onChange={() => { }}
-                                  className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
-                                />
-                              </td>
+                              Select All
+                            </button>
+                            <span className="text-slate-300">•</span>
+                            <button
+                              type="button"
+                              onClick={() => clearSelectedPlayers(1)}
+                              className="text-[11px] font-semibold text-slate-500 hover:underline cursor-pointer"
+                            >
+                              Clear
+                            </button>
+                            <span
+                              className={`text-xs font-bold px-2.5 py-0.5 rounded-full ml-1 ${
+                                team1SelectedPlayerIds.length >= 2
+                                  ? 'bg-blue-100 text-blue-800'
+                                  : 'bg-amber-100 text-amber-800'
+                              }`}
+                            >
+                              {team1SelectedPlayerIds.length} Selected
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Dynamic Formation Breakdown Strip */}
+                        <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-medium text-slate-600 bg-slate-50 border border-slate-100 rounded-xl px-3 py-1.5">
+                          <span className="text-slate-400 font-bold uppercase text-[10px]">Formation:</span>
+                          <span className="bg-white border border-slate-200 px-2 py-0.5 rounded-md font-semibold text-blue-900">
+                            🏏 {f1.batters} Bat
+                          </span>
+                          <span className="bg-white border border-slate-200 px-2 py-0.5 rounded-md font-semibold text-purple-900">
+                            ⚡ {f1.bowlers} Bowl
+                          </span>
+                          <span className="bg-white border border-slate-200 px-2 py-0.5 rounded-md font-semibold text-amber-900">
+                            ✨ {f1.allRounders} AR
+                          </span>
+                          <span className="bg-white border border-slate-200 px-2 py-0.5 rounded-md font-semibold text-emerald-900">
+                            🧤 {f1.keepers} WK
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Squad Table with Edit / Delete Actions */}
+                      <div className="border border-slate-200 rounded-xl overflow-hidden max-h-[310px] overflow-y-auto">
+                        <table className="w-full text-left text-xs">
+                          <thead className="bg-slate-50 text-slate-600 uppercase font-bold border-b border-slate-200 sticky top-0 z-10">
+                            <tr>
+                              <th className="px-3 py-2 w-8 text-center">#</th>
+                              <th className="px-3 py-2">Player Details</th>
+                              <th className="px-3 py-2">Role</th>
+                              <th className="px-2 py-2 text-center w-16">Edit</th>
+                              <th className="px-3 py-2 w-10 text-center">Play</th>
                             </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 font-medium">
+                            {team1.players.map((player) => {
+                              const isSelected = team1SelectedPlayerIds.includes(player.id);
+                              return (
+                                <tr
+                                  key={player.id}
+                                  className={`transition hover:bg-slate-50 ${
+                                    isSelected ? 'bg-blue-50/25' : ''
+                                  }`}
+                                >
+                                  <td
+                                    onClick={() => togglePlayerSelection(1, player.id)}
+                                    className="px-3 py-2.5 text-center text-slate-400 font-semibold cursor-pointer"
+                                  >
+                                    {player.number}
+                                  </td>
+                                  <td
+                                    onClick={() => togglePlayerSelection(1, player.id)}
+                                    className="px-3 py-2.5 cursor-pointer"
+                                  >
+                                    <div className="font-bold text-slate-900">{player.name}</div>
+                                    <div className="text-[10px] text-slate-500 font-normal">
+                                      {player.battingStyle || 'Right-hand bat'}
+                                      {player.bowlingStyle ? ` • ${player.bowlingStyle}` : ''}
+                                    </div>
+                                  </td>
+                                  <td
+                                    onClick={() => togglePlayerSelection(1, player.id)}
+                                    className="px-3 py-2.5 cursor-pointer"
+                                  >
+                                    <RoleBadge role={player.role} />
+                                  </td>
+                                  <td className="px-2 py-2.5 text-center">
+                                    <div className="flex items-center justify-center gap-1">
+                                      <button
+                                        type="button"
+                                        title="Edit player name & role"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          openEditPlayer(team1.id, player);
+                                        }}
+                                        className="p-1 rounded-md text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition cursor-pointer"
+                                      >
+                                        <Edit2 className="w-3.5 h-3.5" />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        title="Remove player"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleDeletePlayer(team1.id, player.id);
+                                        }}
+                                        className="p-1 rounded-md text-slate-400 hover:text-red-600 hover:bg-red-50 transition cursor-pointer"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    </div>
+                                  </td>
+                                  <td
+                                    onClick={() => togglePlayerSelection(1, player.id)}
+                                    className="px-3 py-2.5 text-center cursor-pointer"
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={isSelected}
+                                      onChange={() => {}}
+                                      className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                    />
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* RIGHT: Team 2 (Away) */}
-                <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex flex-col">
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 border border-red-200">
-                      <Shield className="w-3.5 h-3.5 text-red-600" />
-                      Team 2 (Away)
-                    </span>
+                {(() => {
+                  const f2 = getFormationSummary(team2, team2SelectedPlayerIds);
+                  return (
+                    <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-100 shadow-sm flex flex-col">
+                      <div className="flex items-center justify-between mb-3.5">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 border border-red-200">
+                          <Shield className="w-3.5 h-3.5 text-red-600" />
+                          Team 2 (Away)
+                        </span>
 
-                    <button
-                      type="button"
-                      onClick={() => setShowChangeTeamModal('team2')}
-                      className="text-xs font-semibold text-slate-600 hover:text-slate-900 border border-slate-200 hover:border-slate-300 rounded-lg px-3 py-1 bg-white hover:bg-slate-50 transition shadow-2xs"
-                    >
-                      Change Team
-                    </button>
-                  </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => openAddPlayer(team2.id)}
+                            className="inline-flex items-center gap-1 text-xs font-semibold text-red-700 hover:text-red-800 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg px-2.5 py-1 transition cursor-pointer"
+                          >
+                            <UserPlus className="w-3.5 h-3.5" />
+                            <span>Add Player</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setShowChangeTeamModal('team2')}
+                            className="text-xs font-semibold text-slate-600 hover:text-slate-900 border border-slate-200 hover:border-slate-300 rounded-lg px-2.5 py-1 bg-white hover:bg-slate-50 transition shadow-2xs cursor-pointer"
+                          >
+                            Change Team
+                          </button>
+                        </div>
+                      </div>
 
-                  <div className="flex items-center gap-3.5 mb-5 pb-4 border-b border-slate-100">
-                    {renderTeamLogo(team2.badgeType, 'w-12 h-12')}
-                    <div>
-                      <h4 className="text-xl font-extrabold text-slate-900 tracking-tight leading-none">
-                        {team2.name}
-                      </h4>
-                      <button
-                        type="button"
-                        onClick={() => setShowTeamModal(true)}
-                        className="text-xs text-blue-600 hover:underline mt-1 font-semibold inline-block"
-                      >
-                        + Add New Team
-                      </button>
-                    </div>
-                  </div>
+                      <div className="flex items-center gap-3.5 mb-4 pb-3.5 border-b border-slate-100">
+                        {renderTeamLogo(team2.badgeType, 'w-12 h-12')}
+                        <div className="flex-1">
+                          <h4 className="text-xl font-extrabold text-slate-900 tracking-tight leading-none">
+                            {team2.name}
+                          </h4>
+                          <p className="text-xs text-slate-500 mt-1">
+                            {team2.city} • {team2.players.length} Total Squad Members
+                          </p>
+                        </div>
+                      </div>
 
-                  <div className="flex items-center justify-between mb-2.5">
-                    <h5 className="text-xs font-bold uppercase tracking-wider text-slate-700">
-                      Select Playing 11 ({team2.name})
-                    </h5>
-                    <span
-                      className={`text-xs font-semibold px-2 py-0.5 rounded-full ${team2SelectedPlayerIds.length === 11
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : 'bg-amber-100 text-amber-800'
-                        }`}
-                    >
-                      {team2SelectedPlayerIds.length}/11 selected
-                    </span>
-                  </div>
-
-                  <div className="border border-slate-200 rounded-xl overflow-hidden max-h-[300px] overflow-y-auto">
-                    <table className="w-full text-left text-xs">
-                      <thead className="bg-slate-50 text-slate-600 uppercase font-bold border-b border-slate-200 sticky top-0">
-                        <tr>
-                          <th className="px-3 py-2 w-8 text-center">#</th>
-                          <th className="px-3 py-2">Player Name</th>
-                          <th className="px-3 py-2">Role</th>
-                          <th className="px-3 py-2 w-10 text-center">Select</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 font-medium">
-                        {team2.players.map((player) => {
-                          const isSelected = team2SelectedPlayerIds.includes(player.id);
-                          return (
-                            <tr
-                              key={player.id}
-                              onClick={() => togglePlayerSelection(2, player.id)}
-                              className={`cursor-pointer transition hover:bg-slate-50 ${isSelected ? 'bg-red-50/30' : ''
-                                }`}
+                      {/* Formation Summary & Quick Controls */}
+                      <div className="mb-3 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <h5 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                            <Users className="w-3.5 h-3.5 text-red-600" />
+                            <span>Playing Squad Lineup</span>
+                          </h5>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => selectAllPlayers(2)}
+                              className="text-[11px] font-semibold text-blue-600 hover:underline cursor-pointer"
                             >
-                              <td className="px-3 py-2.5 text-center text-slate-400 font-semibold">
-                                {player.number}
-                              </td>
-                              <td className="px-3 py-2.5 text-slate-900 font-bold">
-                                {player.name}
-                              </td>
-                              <td className="px-3 py-2.5">
-                                <RoleBadge role={player.role} />
-                              </td>
-                              <td className="px-3 py-2.5 text-center">
-                                <input
-                                  type="checkbox"
-                                  checked={isSelected}
-                                  onChange={() => { }}
-                                  className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
-                                />
-                              </td>
+                              Select All
+                            </button>
+                            <span className="text-slate-300">•</span>
+                            <button
+                              type="button"
+                              onClick={() => clearSelectedPlayers(2)}
+                              className="text-[11px] font-semibold text-slate-500 hover:underline cursor-pointer"
+                            >
+                              Clear
+                            </button>
+                            <span
+                              className={`text-xs font-bold px-2.5 py-0.5 rounded-full ml-1 ${
+                                team2SelectedPlayerIds.length >= 2
+                                  ? 'bg-red-100 text-red-800'
+                                  : 'bg-amber-100 text-amber-800'
+                              }`}
+                            >
+                              {team2SelectedPlayerIds.length} Selected
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Dynamic Formation Breakdown Strip */}
+                        <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-medium text-slate-600 bg-slate-50 border border-slate-100 rounded-xl px-3 py-1.5">
+                          <span className="text-slate-400 font-bold uppercase text-[10px]">Formation:</span>
+                          <span className="bg-white border border-slate-200 px-2 py-0.5 rounded-md font-semibold text-blue-900">
+                            🏏 {f2.batters} Bat
+                          </span>
+                          <span className="bg-white border border-slate-200 px-2 py-0.5 rounded-md font-semibold text-purple-900">
+                            ⚡ {f2.bowlers} Bowl
+                          </span>
+                          <span className="bg-white border border-slate-200 px-2 py-0.5 rounded-md font-semibold text-amber-900">
+                            ✨ {f2.allRounders} AR
+                          </span>
+                          <span className="bg-white border border-slate-200 px-2 py-0.5 rounded-md font-semibold text-emerald-900">
+                            🧤 {f2.keepers} WK
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Squad Table with Edit / Delete Actions */}
+                      <div className="border border-slate-200 rounded-xl overflow-hidden max-h-[310px] overflow-y-auto">
+                        <table className="w-full text-left text-xs">
+                          <thead className="bg-slate-50 text-slate-600 uppercase font-bold border-b border-slate-200 sticky top-0 z-10">
+                            <tr>
+                              <th className="px-3 py-2 w-8 text-center">#</th>
+                              <th className="px-3 py-2">Player Details</th>
+                              <th className="px-3 py-2">Role</th>
+                              <th className="px-2 py-2 text-center w-16">Edit</th>
+                              <th className="px-3 py-2 w-10 text-center">Play</th>
                             </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 font-medium">
+                            {team2.players.map((player) => {
+                              const isSelected = team2SelectedPlayerIds.includes(player.id);
+                              return (
+                                <tr
+                                  key={player.id}
+                                  className={`transition hover:bg-slate-50 ${
+                                    isSelected ? 'bg-red-50/25' : ''
+                                  }`}
+                                >
+                                  <td
+                                    onClick={() => togglePlayerSelection(2, player.id)}
+                                    className="px-3 py-2.5 text-center text-slate-400 font-semibold cursor-pointer"
+                                  >
+                                    {player.number}
+                                  </td>
+                                  <td
+                                    onClick={() => togglePlayerSelection(2, player.id)}
+                                    className="px-3 py-2.5 cursor-pointer"
+                                  >
+                                    <div className="font-bold text-slate-900">{player.name}</div>
+                                    <div className="text-[10px] text-slate-500 font-normal">
+                                      {player.battingStyle || 'Right-hand bat'}
+                                      {player.bowlingStyle ? ` • ${player.bowlingStyle}` : ''}
+                                    </div>
+                                  </td>
+                                  <td
+                                    onClick={() => togglePlayerSelection(2, player.id)}
+                                    className="px-3 py-2.5 cursor-pointer"
+                                  >
+                                    <RoleBadge role={player.role} />
+                                  </td>
+                                  <td className="px-2 py-2.5 text-center">
+                                    <div className="flex items-center justify-center gap-1">
+                                      <button
+                                        type="button"
+                                        title="Edit player name & role"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          openEditPlayer(team2.id, player);
+                                        }}
+                                        className="p-1 rounded-md text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition cursor-pointer"
+                                      >
+                                        <Edit2 className="w-3.5 h-3.5" />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        title="Remove player"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleDeletePlayer(team2.id, player.id);
+                                        }}
+                                        className="p-1 rounded-md text-slate-400 hover:text-red-600 hover:bg-red-50 transition cursor-pointer"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    </div>
+                                  </td>
+                                  <td
+                                    onClick={() => togglePlayerSelection(2, player.id)}
+                                    className="px-3 py-2.5 text-center cursor-pointer"
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={isSelected}
+                                      onChange={() => {}}
+                                      className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                    />
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* Bottom Navigation */}
@@ -867,7 +1208,7 @@ export default function MatchSetupWizard() {
                 <button
                   type="button"
                   onClick={() => setCurrentStep(1)}
-                  className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-sm font-semibold transition shadow-2xs"
+                  className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-sm font-semibold transition shadow-2xs cursor-pointer"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   <span>Back</span>
@@ -875,8 +1216,14 @@ export default function MatchSetupWizard() {
 
                 <button
                   type="button"
-                  onClick={() => setCurrentStep(3)}
-                  className="inline-flex items-center gap-2 bg-[#0066FF] hover:bg-[#0052cc] text-white font-medium px-7 py-3 rounded-xl shadow-md transition"
+                  onClick={() => {
+                    if (team1SelectedPlayerIds.length < 2 || team2SelectedPlayerIds.length < 2) {
+                      alert('Please select at least 2 playing members for each team to proceed.');
+                      return;
+                    }
+                    setCurrentStep(3);
+                  }}
+                  className="inline-flex items-center gap-2 bg-[#0066FF] hover:bg-[#0052cc] text-white font-medium px-7 py-3 rounded-xl shadow-md transition cursor-pointer active:scale-[0.99]"
                 >
                   <span>Next: Toss & Conditions</span>
                   <ArrowRight className="w-4 h-4" />
@@ -1687,6 +2034,166 @@ export default function MatchSetupWizard() {
                 );
               })}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT / ADD PLAYER MODAL */}
+      {editingPlayer && (
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center mb-4 pb-2 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                  {editingPlayer.isNew ? (
+                    <UserPlus className="w-5 h-5 text-blue-600" />
+                  ) : (
+                    <Edit2 className="w-4 h-4 text-blue-600" />
+                  )}
+                </div>
+                <div>
+                  <h3 className="font-bold text-base sm:text-lg text-slate-900 leading-tight">
+                    {editingPlayer.isNew ? 'Add Squad Member' : 'Edit Player Details'}
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium">
+                    {teams.find((t) => t.id === editingPlayer.teamId)?.name}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingPlayer(null)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSavePlayer();
+              }}
+              className="space-y-4"
+            >
+              {/* Name & Jersey Number */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="col-span-2">
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Player Full Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Virat Kohli"
+                    value={editPlayerName}
+                    onChange={(e) => setEditPlayerName(e.target.value)}
+                    className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold text-slate-900 bg-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Jersey #
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="999"
+                    value={editPlayerNumber}
+                    onChange={(e) => setEditPlayerNumber(Number(e.target.value))}
+                    className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold text-slate-900 bg-white text-center"
+                  />
+                </div>
+              </div>
+
+              {/* Primary Role */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Primary Playing Role <span className="text-red-500">*</span>
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {(['Batter', 'All-rounder', 'Bowler', 'Wicketkeeper'] as const).map((r) => (
+                    <button
+                      key={r}
+                      type="button"
+                      onClick={() => setEditPlayerRole(r)}
+                      className={`py-2 px-3 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                        editPlayerRole === r
+                          ? 'border-2 border-blue-600 bg-blue-50 text-blue-900 shadow-2xs'
+                          : 'border-slate-200 hover:border-slate-300 text-slate-700 bg-white'
+                      }`}
+                    >
+                      <span>
+                        {r === 'Batter'
+                          ? '🏏'
+                          : r === 'Bowler'
+                          ? '⚡'
+                          : r === 'All-rounder'
+                          ? '✨'
+                          : '🧤'}
+                      </span>
+                      <span>{r}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Batting & Bowling Styles */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Batting Style
+                  </label>
+                  <select
+                    value={editBattingStyle}
+                    onChange={(e) => setEditBattingStyle(e.target.value)}
+                    className="w-full appearance-none bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                  >
+                    <option value="Right-hand bat">Right-hand bat</option>
+                    <option value="Left-hand bat">Left-hand bat</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Bowling Style
+                  </label>
+                  <select
+                    value={editBowlingStyle}
+                    onChange={(e) => setEditBowlingStyle(e.target.value)}
+                    className="w-full appearance-none bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                  >
+                    <option value="Right-arm fast">Right-arm fast</option>
+                    <option value="Right-arm medium">Right-arm medium</option>
+                    <option value="Left-arm fast">Left-arm fast</option>
+                    <option value="Left-arm medium">Left-arm medium</option>
+                    <option value="Right-arm off-spin">Right-arm off-spin</option>
+                    <option value="Right-arm leg-spin">Right-arm leg-spin</option>
+                    <option value="Slow left-arm orthodox">Slow left-arm orthodox</option>
+                    <option value="None">None / Non-bowler</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex justify-end gap-2.5 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setEditingPlayer(null)}
+                  className="px-4 py-2 text-xs sm:text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={!editPlayerName.trim()}
+                  className="px-5 py-2 text-xs sm:text-sm font-semibold bg-[#0066FF] hover:bg-[#0052cc] text-white rounded-xl shadow-md transition cursor-pointer disabled:opacity-50"
+                >
+                  {editingPlayer.isNew ? 'Add Player' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
