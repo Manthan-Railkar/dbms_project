@@ -300,29 +300,26 @@ export default function MatchSetupWizard() {
             >
               <div className="flex items-center gap-2 pb-1.5">
                 <div
-                  className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-xs sm:text-sm transition ${
-                    currentStep === 1
+                  className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-xs sm:text-sm transition ${currentStep === 1
                       ? 'bg-[#0066FF] text-white shadow-md'
                       : currentStep > 1
-                      ? 'bg-emerald-500 text-white'
-                      : 'bg-[#152744]/80 text-white/90 border border-white/25 backdrop-blur-xs'
-                  }`}
+                        ? 'bg-emerald-500 text-white'
+                        : 'bg-[#152744]/80 text-white/90 border border-white/25 backdrop-blur-xs'
+                    }`}
                 >
                   {currentStep > 1 ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : '1'}
                 </div>
                 <span
-                  className={`text-xs sm:text-sm tracking-wide ${
-                    currentStep === 1 ? 'font-semibold text-white' : 'font-medium text-white/80'
-                  }`}
+                  className={`text-xs sm:text-sm tracking-wide ${currentStep === 1 ? 'font-semibold text-white' : 'font-medium text-white/80'
+                    }`}
                 >
                   Match Info
                 </span>
               </div>
               {/* Active Underline Indicator */}
               <div
-                className={`h-[2.5px] rounded-full transition-all duration-300 ${
-                  currentStep === 1 ? 'w-full bg-[#0066FF]' : 'w-0 bg-transparent'
-                }`}
+                className={`h-[2.5px] rounded-full transition-all duration-300 ${currentStep === 1 ? 'w-full bg-[#0066FF]' : 'w-0 bg-transparent'
+                  }`}
               />
             </div>
 
@@ -339,28 +336,25 @@ export default function MatchSetupWizard() {
             >
               <div className="flex items-center gap-2 pb-1.5">
                 <div
-                  className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-xs sm:text-sm transition ${
-                    currentStep === 2
+                  className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-xs sm:text-sm transition ${currentStep === 2
                       ? 'bg-[#0066FF] text-white shadow-md'
                       : currentStep > 2
-                      ? 'bg-emerald-500 text-white'
-                      : 'bg-[#152744]/80 text-white/90 border border-white/25 backdrop-blur-xs'
-                  }`}
+                        ? 'bg-emerald-500 text-white'
+                        : 'bg-[#152744]/80 text-white/90 border border-white/25 backdrop-blur-xs'
+                    }`}
                 >
                   {currentStep > 2 ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : '2'}
                 </div>
                 <span
-                  className={`text-xs sm:text-sm tracking-wide ${
-                    currentStep === 2 ? 'font-semibold text-white' : 'font-medium text-white/80'
-                  }`}
+                  className={`text-xs sm:text-sm tracking-wide ${currentStep === 2 ? 'font-semibold text-white' : 'font-medium text-white/80'
+                    }`}
                 >
                   Teams & Squads
                 </span>
               </div>
               <div
-                className={`h-[2.5px] rounded-full transition-all duration-300 ${
-                  currentStep === 2 ? 'w-full bg-[#0066FF]' : 'w-0 bg-transparent'
-                }`}
+                className={`h-[2.5px] rounded-full transition-all duration-300 ${currentStep === 2 ? 'w-full bg-[#0066FF]' : 'w-0 bg-transparent'
+                  }`}
               />
             </div>
 
@@ -377,28 +371,25 @@ export default function MatchSetupWizard() {
             >
               <div className="flex items-center gap-2 pb-1.5">
                 <div
-                  className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-xs sm:text-sm transition ${
-                    currentStep === 3
+                  className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-xs sm:text-sm transition ${currentStep === 3
                       ? 'bg-[#0066FF] text-white shadow-md'
                       : currentStep > 3
-                      ? 'bg-emerald-500 text-white'
-                      : 'bg-[#152744]/80 text-white/90 border border-white/25 backdrop-blur-xs'
-                  }`}
+                        ? 'bg-emerald-500 text-white'
+                        : 'bg-[#152744]/80 text-white/90 border border-white/25 backdrop-blur-xs'
+                    }`}
                 >
                   {currentStep > 3 ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : '3'}
                 </div>
                 <span
-                  className={`text-xs sm:text-sm tracking-wide ${
-                    currentStep === 3 ? 'font-semibold text-white' : 'font-medium text-white/80'
-                  }`}
+                  className={`text-xs sm:text-sm tracking-wide ${currentStep === 3 ? 'font-semibold text-white' : 'font-medium text-white/80'
+                    }`}
                 >
                   Toss & Conditions
                 </span>
               </div>
               <div
-                className={`h-[2.5px] rounded-full transition-all duration-300 ${
-                  currentStep === 3 ? 'w-full bg-[#0066FF]' : 'w-0 bg-transparent'
-                }`}
+                className={`h-[2.5px] rounded-full transition-all duration-300 ${currentStep === 3 ? 'w-full bg-[#0066FF]' : 'w-0 bg-transparent'
+                  }`}
               />
             </div>
 
@@ -415,26 +406,23 @@ export default function MatchSetupWizard() {
             >
               <div className="flex items-center gap-2 pb-1.5">
                 <div
-                  className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-xs sm:text-sm transition ${
-                    currentStep === 4
+                  className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-xs sm:text-sm transition ${currentStep === 4
                       ? 'bg-[#0066FF] text-white shadow-md'
                       : 'bg-[#152744]/80 text-white/90 border border-white/25 backdrop-blur-xs'
-                  }`}
+                    }`}
                 >
                   4
                 </div>
                 <span
-                  className={`text-xs sm:text-sm tracking-wide ${
-                    currentStep === 4 ? 'font-semibold text-white' : 'font-medium text-white/80'
-                  }`}
+                  className={`text-xs sm:text-sm tracking-wide ${currentStep === 4 ? 'font-semibold text-white' : 'font-medium text-white/80'
+                    }`}
                 >
                   Starting Lineup
                 </span>
               </div>
               <div
-                className={`h-[2.5px] rounded-full transition-all duration-300 ${
-                  currentStep === 4 ? 'w-full bg-[#0066FF]' : 'w-0 bg-transparent'
-                }`}
+                className={`h-[2.5px] rounded-full transition-all duration-300 ${currentStep === 4 ? 'w-full bg-[#0066FF]' : 'w-0 bg-transparent'
+                  }`}
               />
             </div>
           </div>
@@ -518,16 +506,14 @@ export default function MatchSetupWizard() {
                   {/* T20 (20 ov) Option Pill */}
                   <div
                     onClick={() => setMatchFormat('T20')}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition ${
-                      matchFormat === 'T20'
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition ${matchFormat === 'T20'
                         ? 'border-2 border-blue-500 bg-[#f0f6ff] text-slate-900 shadow-2xs'
                         : 'border border-[#e2e8f0] hover:border-slate-300 text-slate-800 bg-white'
-                    }`}
+                      }`}
                   >
                     <div
-                      className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                        matchFormat === 'T20' ? 'border-blue-600' : 'border-slate-400'
-                      }`}
+                      className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${matchFormat === 'T20' ? 'border-blue-600' : 'border-slate-400'
+                        }`}
                     >
                       {matchFormat === 'T20' && (
                         <div className="w-2 h-2 rounded-full bg-blue-600" />
@@ -539,18 +525,16 @@ export default function MatchSetupWizard() {
                   {/* ODI (50 ov) Option Pill */}
                   <div
                     onClick={() => setMatchFormat('ODI')}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition ${
-                      matchFormat === 'ODI'
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition ${matchFormat === 'ODI'
                         ? 'border-2 border-blue-500 bg-[#f0f6ff] text-slate-900 shadow-2xs'
                         : 'border border-[#e2e8f0] hover:border-slate-300 text-slate-800 bg-white'
-                    }`}
+                      }`}
                   >
                     <div
-                      className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                        matchFormat === 'ODI'
+                      className={`w-4 h-4 rounded-full border flex items-center justify-center ${matchFormat === 'ODI'
                           ? 'border-2 border-blue-600'
                           : 'border-slate-400'
-                      }`}
+                        }`}
                     >
                       {matchFormat === 'ODI' && (
                         <div className="w-2 h-2 rounded-full bg-blue-600" />
@@ -562,18 +546,16 @@ export default function MatchSetupWizard() {
                   {/* Custom Overs Option Pill */}
                   <div
                     onClick={() => setMatchFormat('Custom')}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition ${
-                      matchFormat === 'Custom'
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition ${matchFormat === 'Custom'
                         ? 'border-2 border-blue-500 bg-[#f0f6ff] text-slate-900 shadow-2xs'
                         : 'border border-[#e2e8f0] hover:border-slate-300 text-slate-800 bg-white'
-                    }`}
+                      }`}
                   >
                     <div
-                      className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                        matchFormat === 'Custom'
+                      className={`w-4 h-4 rounded-full border flex items-center justify-center ${matchFormat === 'Custom'
                           ? 'border-2 border-blue-600'
                           : 'border-slate-400'
-                      }`}
+                        }`}
                     >
                       {matchFormat === 'Custom' && (
                         <div className="w-2 h-2 rounded-full bg-blue-600" />
@@ -733,11 +715,10 @@ export default function MatchSetupWizard() {
                       Select Playing 11 ({team1.name})
                     </h5>
                     <span
-                      className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                        team1SelectedPlayerIds.length === 11
+                      className={`text-xs font-semibold px-2 py-0.5 rounded-full ${team1SelectedPlayerIds.length === 11
                           ? 'bg-emerald-100 text-emerald-800'
                           : 'bg-amber-100 text-amber-800'
-                      }`}
+                        }`}
                     >
                       {team1SelectedPlayerIds.length}/11 selected
                     </span>
@@ -760,9 +741,8 @@ export default function MatchSetupWizard() {
                             <tr
                               key={player.id}
                               onClick={() => togglePlayerSelection(1, player.id)}
-                              className={`cursor-pointer transition hover:bg-slate-50 ${
-                                isSelected ? 'bg-blue-50/30' : ''
-                              }`}
+                              className={`cursor-pointer transition hover:bg-slate-50 ${isSelected ? 'bg-blue-50/30' : ''
+                                }`}
                             >
                               <td className="px-3 py-2.5 text-center text-slate-400 font-semibold">
                                 {player.number}
@@ -777,7 +757,7 @@ export default function MatchSetupWizard() {
                                 <input
                                   type="checkbox"
                                   checked={isSelected}
-                                  onChange={() => {}}
+                                  onChange={() => { }}
                                   className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
                                 />
                               </td>
@@ -827,11 +807,10 @@ export default function MatchSetupWizard() {
                       Select Playing 11 ({team2.name})
                     </h5>
                     <span
-                      className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                        team2SelectedPlayerIds.length === 11
+                      className={`text-xs font-semibold px-2 py-0.5 rounded-full ${team2SelectedPlayerIds.length === 11
                           ? 'bg-emerald-100 text-emerald-800'
                           : 'bg-amber-100 text-amber-800'
-                      }`}
+                        }`}
                     >
                       {team2SelectedPlayerIds.length}/11 selected
                     </span>
@@ -854,9 +833,8 @@ export default function MatchSetupWizard() {
                             <tr
                               key={player.id}
                               onClick={() => togglePlayerSelection(2, player.id)}
-                              className={`cursor-pointer transition hover:bg-slate-50 ${
-                                isSelected ? 'bg-red-50/30' : ''
-                              }`}
+                              className={`cursor-pointer transition hover:bg-slate-50 ${isSelected ? 'bg-red-50/30' : ''
+                                }`}
                             >
                               <td className="px-3 py-2.5 text-center text-slate-400 font-semibold">
                                 {player.number}
@@ -871,7 +849,7 @@ export default function MatchSetupWizard() {
                                 <input
                                   type="checkbox"
                                   checked={isSelected}
-                                  onChange={() => {}}
+                                  onChange={() => { }}
                                   className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
                                 />
                               </td>
@@ -923,11 +901,10 @@ export default function MatchSetupWizard() {
                       <button
                         type="button"
                         onClick={() => setTossWinnerId(team1.id)}
-                        className={`relative flex flex-col items-center justify-center p-4 rounded-xl border text-center transition cursor-pointer ${
-                          tossWinnerId === team1.id
+                        className={`relative flex flex-col items-center justify-center p-4 rounded-xl border text-center transition cursor-pointer ${tossWinnerId === team1.id
                             ? 'border-2 border-blue-600 bg-blue-50/30 text-blue-950 font-bold shadow-sm'
                             : 'border-slate-200 hover:border-slate-300 text-slate-800 bg-white'
-                        }`}
+                          }`}
                       >
                         {tossWinnerId === team1.id && (
                           <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center">
@@ -941,11 +918,10 @@ export default function MatchSetupWizard() {
                       <button
                         type="button"
                         onClick={() => setTossWinnerId(team2.id)}
-                        className={`relative flex flex-col items-center justify-center p-4 rounded-xl border text-center transition cursor-pointer ${
-                          tossWinnerId === team2.id
+                        className={`relative flex flex-col items-center justify-center p-4 rounded-xl border text-center transition cursor-pointer ${tossWinnerId === team2.id
                             ? 'border-2 border-blue-600 bg-blue-50/30 text-blue-950 font-bold shadow-sm'
                             : 'border-slate-200 hover:border-slate-300 text-slate-800 bg-white'
-                        }`}
+                          }`}
                       >
                         {tossWinnerId === team2.id && (
                           <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center">
@@ -969,11 +945,10 @@ export default function MatchSetupWizard() {
                       <button
                         type="button"
                         onClick={() => setTossDecision('Bat')}
-                        className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl border text-sm font-bold transition cursor-pointer ${
-                          tossDecision === 'Bat'
+                        className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl border text-sm font-bold transition cursor-pointer ${tossDecision === 'Bat'
                             ? 'border-2 border-blue-600 bg-blue-50/50 text-blue-900 shadow-sm'
                             : 'border-slate-200 hover:border-slate-300 text-slate-700 bg-white'
-                        }`}
+                          }`}
                       >
                         <span className="text-base">🏏</span>
                         <span>Bat First</span>
@@ -982,11 +957,10 @@ export default function MatchSetupWizard() {
                       <button
                         type="button"
                         onClick={() => setTossDecision('Field')}
-                        className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl border text-sm font-bold transition cursor-pointer ${
-                          tossDecision === 'Field'
+                        className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl border text-sm font-bold transition cursor-pointer ${tossDecision === 'Field'
                             ? 'border-2 border-blue-600 bg-blue-50/50 text-blue-900 shadow-sm'
                             : 'border-slate-200 hover:border-slate-300 text-slate-700 bg-white'
-                        }`}
+                          }`}
                       >
                         <span className="text-base">⚾</span>
                         <span>Field First</span>
@@ -1400,17 +1374,16 @@ export default function MatchSetupWizard() {
                       liveBallHistory.map((b, i) => (
                         <span
                           key={i}
-                          className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs ${
-                            b === '4'
+                          className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs ${b === '4'
                               ? 'bg-blue-600 text-white'
                               : b === '6'
-                              ? 'bg-purple-600 text-white animate-bounce'
-                              : b === 'W'
-                              ? 'bg-red-600 text-white font-black'
-                              : b.includes('wd') || b.includes('nb')
-                              ? 'bg-amber-600 text-white'
-                              : 'bg-white/20 text-white'
-                          }`}
+                                ? 'bg-purple-600 text-white animate-bounce'
+                                : b === 'W'
+                                  ? 'bg-red-600 text-white font-black'
+                                  : b.includes('wd') || b.includes('nb')
+                                    ? 'bg-amber-600 text-white'
+                                    : 'bg-white/20 text-white'
+                            }`}
                         >
                           {b}
                         </span>
@@ -1690,13 +1663,12 @@ export default function MatchSetupWizard() {
                       }
                       setShowChangeTeamModal(null);
                     }}
-                    className={`w-full flex items-center justify-between p-3.5 rounded-xl border text-left transition cursor-pointer ${
-                      isSelected
+                    className={`w-full flex items-center justify-between p-3.5 rounded-xl border text-left transition cursor-pointer ${isSelected
                         ? 'border-blue-600 bg-blue-50/50'
                         : isOtherTeam
-                        ? 'opacity-40 cursor-not-allowed bg-slate-50'
-                        : 'border-slate-200 hover:bg-slate-50'
-                    }`}
+                          ? 'opacity-40 cursor-not-allowed bg-slate-50'
+                          : 'border-slate-200 hover:bg-slate-50'
+                      }`}
                   >
                     <div className="flex items-center gap-3">
                       {renderTeamLogo(t.badgeType, 'w-9 h-9')}
