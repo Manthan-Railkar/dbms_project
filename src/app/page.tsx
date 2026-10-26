@@ -351,49 +351,105 @@ export default function MatchSetupWizard() {
       // Fallback
     }
 
-    const matchId = '5';
-    const currentStriker = battingPlaying11.find((p) => p.id === strikerId) || battingPlaying11[0];
-    const currentNonStriker = battingPlaying11.find((p) => p.id === nonStrikerId) || battingPlaying11[1];
-    const currentBowler = bowlingPlaying11.find((p) => p.id === bowlerId) || bowlingPlaying11[0];
+    let matchId = '1';
+    let inningId = 1;
+
+    // Identify selected openers & opening bowler
+    const currentStriker = battingPlaying11.find((p) => p.id === strikerId) || battingPlaying11[0] || { id: 'p-1', name: 'Striker', role: 'Batter' };
+    const currentNonStriker = battingPlaying11.find((p) => p.id === nonStrikerId) || battingPlaying11[1] || { id: 'p-2', name: 'Non-Striker', role: 'Batter' };
+    const currentBowler = bowlingPlaying11.find((p) => p.id === bowlerId) || bowlingPlaying11[0] || { id: 'p-7', name: 'Opening Bowler', role: 'Bowler' };
+
+    let strikerToUse = currentStriker;
+    let nonStrikerToUse = currentNonStriker;
+    let bowlerToUse = currentBowler;
+    let battingSquadToUse = battingPlaying11.filter(
+      (p) => p.id !== currentStriker?.id && p.id !== currentNonStriker?.id
+    );
+    let bowlingSquadToUse = bowlingPlaying11;
+
+    // 1. Create real match, synchronized teams, and players in Supabase Database via API
+    try {
+      const selectedT1Players = team1.players.filter((p) => team1SelectedPlayerIds.includes(p.id));
+      const selectedT2Players = team2.players.filter((p) => team2SelectedPlayerIds.includes(p.id));
+
+      const res = await fetch('/api/match/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tournament_id: parseInt(selectedTournament, 10) || 1,
+          tournament_name: tournaments.find((t) => t.id === selectedTournament)?.name,
+          venue_id: parseInt(selectedVenue, 10) || 1,
+          team1_name: team1.name,
+          team1_city: team1.city,
+          team1_players: selectedT1Players.length > 0 ? selectedT1Players : team1.players,
+          team2_name: team2.name,
+          team2_city: team2.city,
+          team2_players: selectedT2Players.length > 0 ? selectedT2Players : team2.players,
+          toss_winner_id: tossWinnerId === team1.id ? 'team-1' : 'team-2',
+          toss_decision: tossDecision,
+          match_date: `${matchDate}T${matchTime}:00Z`,
+          toss_result: `${tossWinnerId === team1.id ? team1.name : team2.name} won toss and elected to ${tossDecision}`,
+          striker: currentStriker,
+          non_striker: currentNonStriker,
+          bowler: currentBowler
+        })
+      });
+
+      const result = await res.json();
+      if (result.success && result.matchId) {
+        matchId = String(result.matchId);
+        inningId = result.inningId || 1;
+        if (result.striker) {
+          strikerToUse = { ...currentStriker, id: String(result.striker.player_id), name: result.striker.name };
+        }
+        if (result.nonStriker) {
+          nonStrikerToUse = { ...currentNonStriker, id: String(result.nonStriker.player_id), name: result.nonStriker.name };
+        }
+        if (result.bowler) {
+          bowlerToUse = { ...currentBowler, id: String(result.bowler.player_id), name: result.bowler.name };
+        }
+        if (result.battingSquad && result.battingSquad.length > 0) {
+          battingSquadToUse = result.battingSquad.map((p: any) => ({
+            id: String(p.player_id || p.id),
+            name: p.name,
+            role: p.role
+          }));
+        }
+        if (result.bowlingSquad && result.bowlingSquad.length > 0) {
+          bowlingSquadToUse = result.bowlingSquad.map((p: any) => ({
+            id: String(p.player_id || p.id),
+            name: p.name,
+            role: p.role
+          }));
+        }
+      }
+    } catch (err) {
+      console.warn('Supabase match creation fallback:', err);
+    }
 
     const matchData = {
       matchId,
+      inningId,
       tournament: tournaments.find((t) => t.id === selectedTournament)?.name || 'SPIT Premier League 2026',
       team1,
       team2,
       battingTeamName: battingTeam.name,
       bowlingTeamName: bowlingTeam.name,
       totalOvers: matchFormat === 'T20' ? 20 : matchFormat === 'ODI' ? 50 : customOvers,
-      striker: currentStriker,
-      nonStriker: currentNonStriker,
-      bowler: currentBowler,
-      battingSquad: battingPlaying11.filter(
-        (p) => p.id !== currentStriker?.id && p.id !== currentNonStriker?.id
-      ),
-      bowlingSquad: bowlingPlaying11
+      striker: strikerToUse,
+      nonStriker: nonStrikerToUse,
+      bowler: bowlerToUse,
+      battingSquad: battingSquadToUse,
+      bowlingSquad: bowlingSquadToUse,
+      totalRuns: 0,
+      totalWickets: 0,
+      legalBalls: 0,
+      currentOverBalls: []
     };
 
     try {
       localStorage.setItem(`cricket_match_${matchId}`, JSON.stringify(matchData));
     } catch {}
-
-    try {
-      await supabase.from('matches').insert([
-        {
-          tournament_id: 1,
-          match_date: new Date().toISOString(),
-          status: 'Live',
-          team1_id: 1,
-          team2_id: 2,
-          venue_id: 1,
-          toss_winner_id: tossWinnerId === team1.id ? 1 : 2,
-          toss_decision: tossDecision,
-          toss_result: `${tossWinnerId === team1.id ? team1.name : team2.name} won toss and elected to ${tossDecision}`
-        }
-      ]);
-    } catch {
-      // optional
-    }
 
     router.push(`/match/${matchId}`);
   };

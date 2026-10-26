@@ -97,31 +97,32 @@ function MatchLiveContent() {
   const [bowlingTeamName, setBowlingTeamName] = useState('Code Strikers');
   const [totalOvers, setTotalOvers] = useState(20);
   const [inningsNo, setInningsNo] = useState(1);
+  const [inningId, setInningId] = useState<number>(1);
   const [spectatorCount, setSpectatorCount] = useState(128);
   const [isLiveSynced, setIsLiveSynced] = useState(true);
 
-  // Score State (Default matches reference image: 84/2 at 9.3 ov)
-  const [totalRuns, setTotalRuns] = useState(84);
-  const [totalWickets, setTotalWickets] = useState(2);
-  const [legalBalls, setLegalBalls] = useState(57); // 9.3 overs = 9 * 6 + 3 = 57 balls
+  // Score State (ALWAYS START FROM 0/0 AS REQUIRED)
+  const [totalRuns, setTotalRuns] = useState(0);
+  const [totalWickets, setTotalWickets] = useState(0);
+  const [legalBalls, setLegalBalls] = useState(0); // 0.0 overs
 
-  // Players on crease & Bowler
+  // Players on crease & Bowler (Starting with fresh 0 stats)
   const [striker, setStriker] = useState<BatterScore>({
     id: 'p-aarav',
     name: 'Aarav Mehta',
-    runs: 34,
-    balls: 21,
-    fours: 4,
-    sixes: 1,
+    runs: 0,
+    balls: 0,
+    fours: 0,
+    sixes: 0,
     isStriker: true
   });
 
   const [nonStriker, setNonStriker] = useState<BatterScore>({
     id: 'p-rohan',
     name: 'Rohan Sharma',
-    runs: 18,
-    balls: 14,
-    fours: 2,
+    runs: 0,
+    balls: 0,
+    fours: 0,
     sixes: 0,
     isStriker: false
   });
@@ -129,11 +130,11 @@ function MatchLiveContent() {
   const [bowler, setBowler] = useState<BowlerScore>({
     id: 'p-kunal',
     name: 'Kunal Verma',
-    overs: '1.3',
-    legalBalls: 9,
+    overs: '0.0',
+    legalBalls: 0,
     maidens: 0,
-    runs: 12,
-    wickets: 1
+    runs: 0,
+    wickets: 0
   });
 
   // Available Players for batting team (bench / yet to bat)
@@ -155,8 +156,8 @@ function MatchLiveContent() {
     { id: 'p-chirag', name: 'Chirag Shinde', role: 'Bowler' }
   ]);
 
-  // Current Over Ball slots (shows up to 6 balls, defaults to [1, 0, 4] for 9.3 ov)
-  const [currentOverBalls, setCurrentOverBalls] = useState<string[]>(['1', '0', '4']);
+  // Current Over Ball slots (starts empty on fresh match)
+  const [currentOverBalls, setCurrentOverBalls] = useState<string[]>([]);
   const [fullBallHistory, setFullBallHistory] = useState<BallHistoryItem[]>([]);
 
   // Controls UI state
@@ -182,34 +183,149 @@ function MatchLiveContent() {
   const [isEndInningsModalOpen, setIsEndInningsModalOpen] = useState(false);
   const [notificationMsg, setNotificationMsg] = useState<string | null>(null);
 
-  // Load setup data if coming from wizard
+  // Load match data from Supabase & local storage
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(`cricket_match_${matchId}`);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed.tournament) setTournamentName(parsed.tournament);
-        if (parsed.team1 && parsed.team2) {
-          setBattingTeamName(parsed.battingTeamName || parsed.team1.name);
-          setBowlingTeamName(parsed.bowlingTeamName || parsed.team2.name);
+    let isMounted = true;
+
+    async function loadMatchFromDatabase() {
+      try {
+        const res = await fetch(`/api/match/${matchId}`);
+        const result = await res.json();
+
+        if (isMounted && result.success && result.match) {
+          const m = result.match;
+          if (result.tournament?.name) setTournamentName(result.tournament.name);
+          setMatchNumberText(`MATCH ${m.match_id}`);
+
+          if (result.battingTeam?.name) setBattingTeamName(result.battingTeam.name);
+          else if (result.team1?.name) setBattingTeamName(result.team1.name);
+
+          if (result.bowlingTeam?.name) setBowlingTeamName(result.bowlingTeam.name);
+          else if (result.team2?.name) setBowlingTeamName(result.team2.name);
+
+          if (result.striker) {
+            setStriker((prev) => ({
+              ...prev,
+              id: String(result.striker.player_id),
+              name: result.striker.name
+            }));
+          }
+          if (result.nonStriker) {
+            setNonStriker((prev) => ({
+              ...prev,
+              id: String(result.nonStriker.player_id),
+              name: result.nonStriker.name
+            }));
+          }
+          if (result.bowler) {
+            setBowler((prev) => ({
+              ...prev,
+              id: String(result.bowler.player_id),
+              name: result.bowler.name
+            }));
+          }
+          if (result.battingSquad && result.battingSquad.length > 0) {
+            const squad = result.battingSquad.map((p: any) => ({
+              id: String(p.player_id),
+              name: p.name,
+              role: p.role
+            }));
+            setBattingSquad(squad);
+            setSelectedNextBatterId(squad[0].id);
+          }
+          if (result.bowlingSquad && result.bowlingSquad.length > 0) {
+            const squad = result.bowlingSquad.map((p: any) => ({
+              id: String(p.player_id),
+              name: p.name,
+              role: p.role
+            }));
+            setBowlingSquad(squad);
+            const next = squad.find((b: any) => b.id !== String(result.bowler?.player_id)) || squad[0];
+            setSelectedNextBowlerId(next.id);
+          }
+
+          if (result.activeInning) {
+            setInningId(result.activeInning.inning_id);
+
+            // If balls exist in database, restore the live scorecard
+            if (result.ballEvents && result.ballEvents.length > 0) {
+              setTotalRuns(result.activeInning.runs);
+              setTotalWickets(result.activeInning.wickets);
+              const oversVal = parseFloat(result.activeInning.overs) || 0;
+              const legalCount = Math.floor(oversVal) * 6 + Math.round((oversVal % 1) * 10);
+              setLegalBalls(legalCount);
+
+              // Extract last over balls
+              const lastOverEvents = result.ballEvents.slice(-6).map((b: any) => {
+                if (b.wicket_fallen) return 'W';
+                if (b.extra_type === 'Wide') return b.extra_runs > 1 ? `${b.extra_runs}wd` : 'WD';
+                if (b.extra_type === 'No-ball') return b.extra_runs > 1 ? `${b.extra_runs}nb` : 'NB';
+                return String(b.runs_scored || 0);
+              });
+              setCurrentOverBalls(lastOverEvents);
+            }
+          }
         }
-        if (parsed.totalOvers) setTotalOvers(parsed.totalOvers);
-        if (parsed.striker) setStriker((prev) => ({ ...prev, name: parsed.striker.name, id: parsed.striker.id }));
-        if (parsed.nonStriker) setNonStriker((prev) => ({ ...prev, name: parsed.nonStriker.name, id: parsed.nonStriker.id }));
-        if (parsed.bowler) setBowler((prev) => ({ ...prev, name: parsed.bowler.name, id: parsed.bowler.id }));
-        if (parsed.battingSquad && parsed.battingSquad.length > 0) {
-          setBattingSquad(parsed.battingSquad);
-          setSelectedNextBatterId(parsed.battingSquad[0].id);
-        }
-        if (parsed.bowlingSquad && parsed.bowlingSquad.length > 0) {
-          setBowlingSquad(parsed.bowlingSquad);
-          const next = parsed.bowlingSquad.find((b: any) => b.id !== parsed.bowler?.id) || parsed.bowlingSquad[0];
-          setSelectedNextBowlerId(next.id);
-        }
+      } catch (err) {
+        console.warn('API fetch error, falling back to local storage:', err);
       }
-    } catch {
-      // Fallback to default
+
+      // Merge local storage setup data (custom team names, player rosters from wizard)
+      try {
+        const saved = localStorage.getItem(`cricket_match_${matchId}`);
+        if (isMounted && saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed.tournament) setTournamentName(parsed.tournament);
+          if (parsed.battingTeamName) setBattingTeamName(parsed.battingTeamName);
+          if (parsed.bowlingTeamName) setBowlingTeamName(parsed.bowlingTeamName);
+          if (parsed.totalOvers) setTotalOvers(parsed.totalOvers);
+          if (parsed.inningId) setInningId(parsed.inningId);
+
+          if (parsed.striker) {
+            setStriker((prev) => ({
+              ...prev,
+              name: parsed.striker.name,
+              id: parsed.striker.id,
+              runs: parsed.totalRuns !== undefined ? prev.runs : 0,
+              balls: parsed.totalRuns !== undefined ? prev.balls : 0
+            }));
+          }
+          if (parsed.nonStriker) {
+            setNonStriker((prev) => ({
+              ...prev,
+              name: parsed.nonStriker.name,
+              id: parsed.nonStriker.id,
+              runs: parsed.totalRuns !== undefined ? prev.runs : 0,
+              balls: parsed.totalRuns !== undefined ? prev.balls : 0
+            }));
+          }
+          if (parsed.bowler) {
+            setBowler((prev) => ({
+              ...prev,
+              name: parsed.bowler.name,
+              id: parsed.bowler.id,
+              overs: '0.0',
+              runs: 0,
+              wickets: 0
+            }));
+          }
+          if (parsed.battingSquad && parsed.battingSquad.length > 0) {
+            setBattingSquad(parsed.battingSquad);
+            setSelectedNextBatterId(parsed.battingSquad[0].id);
+          }
+          if (parsed.bowlingSquad && parsed.bowlingSquad.length > 0) {
+            setBowlingSquad(parsed.bowlingSquad);
+            const next = parsed.bowlingSquad.find((b: any) => b.id !== parsed.bowler?.id) || parsed.bowlingSquad[0];
+            setSelectedNextBowlerId(next.id);
+          }
+        }
+      } catch {}
     }
+
+    loadMatchFromDatabase();
+    return () => {
+      isMounted = false;
+    };
   }, [matchId]);
 
   // Minor spectator fluctuation
@@ -493,7 +609,7 @@ function MatchLiveContent() {
     }
 
     setExtraModalType(null);
-    syncBallToSupabase(ballDisplay, totalBallRuns, true, false);
+    syncBallToSupabase(ballDisplay, totalBallRuns, true, false, extraName);
   };
 
   // Open Wicket Modal
@@ -604,7 +720,7 @@ function MatchLiveContent() {
       setIsOverComplete(true);
     }
 
-    syncBallToSupabase(ballText, isRunOut ? runOutRunsCompleted : 0, false, true);
+    syncBallToSupabase(ballText, isRunOut ? runOutRunsCompleted : 0, false, true, null, dismissalType);
   };
 
   // Undo Last Ball
@@ -628,6 +744,20 @@ function MatchLiveContent() {
 
     setFullBallHistory((items) => items.slice(0, -1));
     showNotification(`Reverted last ball (${lastItem.ballText}).`);
+
+    // Sync undo to database
+    try {
+      fetch('/api/match/undo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          inning_id: inningId,
+          previous_runs: prev.totalRuns,
+          previous_wickets: prev.totalWickets,
+          previous_overs: parseFloat(`${Math.floor(prev.legalBalls / 6)}.${prev.legalBalls % 6}`)
+        })
+      });
+    } catch {}
   };
 
   // Swap Strike manually
@@ -662,28 +792,43 @@ function MatchLiveContent() {
     showNotification(`Over ${Math.floor(legalBalls / 6) + 1} started! Bowler: ${chosenBowler.name}`);
   };
 
-  // Supabase background sync
+  // Supabase background sync via API route
   const syncBallToSupabase = async (
     ballText: string,
     runs: number,
     isExtra: boolean,
-    isWicket: boolean
+    isWicket: boolean,
+    extraType?: string | null,
+    wType?: string | null
   ) => {
     try {
       setIsLiveSynced(true);
-      await supabase.from('ball_events').insert([
-        {
-          inning_id: 1,
-          over_no: Math.floor(legalBalls / 6) + 1,
+      const isLegal = !isExtra || (!ballText.includes('wd') && !ballText.includes('nb'));
+      const nextLegalBalls = legalBalls + (isLegal ? 1 : 0);
+      const nextOvers = parseFloat(`${Math.floor(nextLegalBalls / 6)}.${nextLegalBalls % 6}`);
+
+      await fetch('/api/match/ball', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          inning_id: inningId,
+          over_no: Math.floor(legalBalls / 6),
           ball_no: (legalBalls % 6) + 1,
-          runs_batter: isExtra ? 0 : runs,
-          runs_extras: isExtra ? runs : 0,
-          extra_type: isExtra ? ballText : null,
-          is_wicket: isWicket
-        }
-      ]);
-    } catch {
-      // Supabase table insertion fallback
+          batter_id: striker.id,
+          bowler_id: bowler.id,
+          runs_scored: isExtra ? 0 : runs,
+          extra_runs: isExtra ? runs : 0,
+          extra_type: extraType || (isExtra ? ballText : null),
+          wicket_fallen: isWicket,
+          wicket_type: wType || (isWicket ? dismissalType : null),
+          is_legal_delivery: isLegal,
+          total_runs: totalRuns + runs,
+          total_wickets: totalWickets + (isWicket ? 1 : 0),
+          overs: nextOvers
+        })
+      });
+    } catch (err) {
+      console.warn('Database ball sync fallback:', err);
     }
   };
 
