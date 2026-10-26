@@ -271,14 +271,14 @@ export default function MatchSetupWizard() {
   const { title: heroTitle, subtitle: heroSubtitle } = getStepTitle();
 
   return (
-    <main className="min-h-screen bg-[#070b14] flex flex-col items-center justify-start p-2 sm:p-5 md:p-8">
+    <main className="min-h-screen w-full bg-[#f8fafc] flex flex-col m-0 p-0">
       {/* ========================================================================= */}
-      {/* THE MAIN CARD/TAB: THE HERO BG IS INSIDE THIS CARD AS THE WHOLE TOP HEADER */}
+      {/* THE MAIN TAB CONTAINER: OCCUPIES THE ENTIRE SPACE (FULL VIEWPORT) */}
       {/* ========================================================================= */}
-      <div className="w-full max-w-[1040px] bg-white rounded-2xl sm:rounded-[28px] overflow-hidden shadow-2xl border border-slate-700/20 flex flex-col transition-all duration-300">
+      <div className="w-full min-h-screen bg-white flex flex-col flex-1 shadow-sm">
         
-        {/* UPPER HERO SECTION OF THE CARD (STADIUM BACKGROUND) */}
-        <div className="relative w-full h-[220px] sm:h-[250px] md:h-[270px] overflow-hidden select-none">
+        {/* UPPER HERO SECTION (STADIUM BACKGROUND SPANNING FULL WIDTH) */}
+        <div className="relative w-full h-[240px] sm:h-[280px] md:h-[310px] overflow-hidden select-none shrink-0">
           {/* Stadium background image inside the top of the card */}
           <div
             className="absolute inset-0 bg-cover bg-[right_30%] sm:bg-[center_top] bg-no-repeat"
@@ -289,7 +289,7 @@ export default function MatchSetupWizard() {
           <div className="absolute inset-0 bg-gradient-to-b from-blue-950/60 via-slate-950/25 to-transparent pointer-events-none" />
 
           {/* Stepper Navigation Bar and Hero Title */}
-          <div className="relative z-10 w-full h-full px-5 sm:px-8 pt-4 sm:pt-5 pb-6 sm:pb-8 flex flex-col justify-between">
+          <div className="relative z-10 w-full max-w-7xl mx-auto h-full px-5 sm:px-10 lg:px-14 pt-5 sm:pt-6 pb-7 sm:pb-9 flex flex-col justify-between">
             {/* Top Stepper Nav */}
             <div className="flex items-center justify-center gap-2 sm:gap-4 text-white text-xs sm:text-sm font-medium">
               {/* Step 1: Match Info */}
@@ -456,8 +456,9 @@ export default function MatchSetupWizard() {
         {/* ======================================================================= */}
         {/* LOWER WHITE SECTION OF THE CARD (CURVES OVER THE HERO GRASS) */}
         {/* ======================================================================= */}
-        <div className="relative bg-white rounded-t-[22px] sm:rounded-t-[28px] -mt-4 sm:-mt-6 z-10 px-5 sm:px-8 pt-6 pb-7 shadow-xs">
-          {/* STEP 1: MATCH INFO */}
+        <div className="relative bg-white rounded-t-[26px] sm:rounded-t-[34px] -mt-6 sm:-mt-8 z-10 px-5 sm:px-10 lg:px-14 pt-7 sm:pt-9 pb-12 shadow-xs flex-1 w-full">
+          <div className="w-full max-w-7xl mx-auto">
+            {/* STEP 1: MATCH INFO */}
           {currentStep === 1 && !isLiveActive && (
             <div className="space-y-4 sm:space-y-5">
               {/* 1. Tournament Card */}
@@ -1485,6 +1486,7 @@ export default function MatchSetupWizard() {
               </div>
             </div>
           )}
+          </div>
         </div>
       </div>
 
