@@ -25,8 +25,10 @@ import {
   Edit2,
   Trash2,
   Users,
-  UserPlus
+  UserPlus,
+  Terminal
 } from 'lucide-react';
+import SqlQueryStudio from '@/components/SqlQueryStudio';
 
 import {
   INITIAL_TOURNAMENTS,
@@ -53,6 +55,9 @@ export default function MatchSetupWizard() {
 
   // Step navigation (1: Match Info, 2: Teams & Squads, 3: Toss & Conditions, 4: Starting Lineup)
   const [currentStep, setCurrentStep] = useState<number>(1);
+
+  // SQL Query Studio Modal state
+  const [showQueryStudio, setShowQueryStudio] = useState<boolean>(false);
 
   // Lists
   const [tournaments, setTournaments] = useState<Tournament[]>(INITIAL_TOURNAMENTS);
@@ -522,8 +527,12 @@ export default function MatchSetupWizard() {
 
         {/* Content: Stepper at top, Title & Subtitle at bottom */}
         <div className="relative z-10 w-full max-w-[1060px] mx-auto h-full px-4 sm:px-6 pt-4 pb-12 sm:pb-14 flex flex-col justify-between">
-          {/* Top Stepper Nav */}
-          <div className="flex items-center justify-center gap-2 sm:gap-4 text-white text-xs sm:text-sm font-medium">
+          {/* Top Bar: Stepper & Top-Right SQL Query Option */}
+          <div className="relative flex items-center justify-between w-full">
+            <div className="hidden md:block w-36" />
+
+            {/* Top Stepper Nav */}
+            <div className="flex items-center justify-center gap-2 sm:gap-4 text-white text-xs sm:text-sm font-medium mx-auto">
             {/* Step 1: Match Info */}
             <div
               onClick={() => {
@@ -660,6 +669,20 @@ export default function MatchSetupWizard() {
               />
             </div>
           </div>
+
+          {/* Top-Right Option to Execute SQL Query */}
+          <div className="flex items-center justify-end md:w-36">
+            <button
+              type="button"
+              onClick={() => setShowQueryStudio(true)}
+              title="Execute any SQL query on database"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-lg shadow-blue-900/40 border border-blue-400/40 backdrop-blur-md transition group active:scale-95 cursor-pointer"
+            >
+              <Terminal className="w-3.5 h-3.5 text-blue-200 group-hover:text-white transition" />
+              <span>SQL Query</span>
+            </button>
+          </div>
+        </div>
 
           {/* Hero Title & Subtitle */}
           <div className="mb-5 sm:mb-6 md:mb-7">
@@ -2276,6 +2299,27 @@ export default function MatchSetupWizard() {
               </div>
             </form>
           </div>
+        </div>
+      )}
+      {/* Persistent Floating Top-Right Query Trigger */}
+      <div className="fixed top-3.5 right-3.5 z-40">
+        <button
+          type="button"
+          onClick={() => setShowQueryStudio(true)}
+          title="Open SQL Query Studio (Execute any raw query)"
+          className="flex items-center gap-2 px-3.5 py-1.5 sm:py-2 rounded-xl bg-[#0a1226]/90 hover:bg-blue-600 text-white text-xs font-bold border border-blue-500/40 hover:border-blue-300 shadow-xl shadow-blue-950/60 backdrop-blur-md transition group active:scale-95 cursor-pointer"
+        >
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <Terminal className="w-3.5 h-3.5 text-blue-400 group-hover:text-white transition" />
+          <span className="hidden sm:inline">Execute Query</span>
+          <span className="sm:hidden">SQL</span>
+        </button>
+      </div>
+
+      {/* SQL Query Studio Modal */}
+      {showQueryStudio && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/75 backdrop-blur-md animate-in fade-in duration-200">
+          <SqlQueryStudio isModal onClose={() => setShowQueryStudio(false)} />
         </div>
       )}
     </main>

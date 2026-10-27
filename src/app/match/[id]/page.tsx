@@ -19,10 +19,14 @@ import {
   ArrowLeft,
   Sparkles,
   Shield,
-  AlertCircle
+  AlertCircle,
+  Terminal,
+  Activity
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { supabase } from '@/lib/supabase';
+import SqlQueryStudio from '@/components/SqlQueryStudio';
+import FinalScorecard, { InningsScorecardData } from '@/components/FinalScorecard';
 
 // Types
 export interface BatterScore {
@@ -100,6 +104,22 @@ function MatchLiveContent() {
   const [inningId, setInningId] = useState<number>(1);
   const [spectatorCount, setSpectatorCount] = useState(128);
   const [isLiveSynced, setIsLiveSynced] = useState(true);
+  const [showQueryStudio, setShowQueryStudio] = useState(false);
+
+  // View toggle & Match Completion state
+  const [currentView, setCurrentView] = useState<'scoring' | 'scorecard'>('scoring');
+  const [isMatchCompleted, setIsMatchCompleted] = useState<boolean>(false);
+  const [innings1Data, setInnings1Data] = useState<InningsScorecardData | null>(null);
+  const [innings2Data, setInnings2Data] = useState<InningsScorecardData | null>(null);
+
+  // Detailed Scorecard tracking
+  const [dismissedBatters, setDismissedBatters] = useState<Array<BatterScore & { dismissal: string }>>([]);
+  const [allBowlers, setAllBowlers] = useState<BowlerScore[]>([]);
+  const [extras, setExtras] = useState({ wides: 0, noBalls: 0, byes: 0, legByes: 0, total: 0 });
+  const [fallOfWickets, setFallOfWickets] = useState<Array<{ wicketNo: number; score: number; over: string; batterName: string }>>([]);
+  const [venueName, setVenueName] = useState('Wankhede Stadium, Mumbai');
+  const [matchDateStr, setMatchDateStr] = useState('October 27, 2026');
+  const [tossResultStr, setTossResultStr] = useState('');
 
   // Score State (ALWAYS START FROM 0/0 AS REQUIRED)
   const [totalRuns, setTotalRuns] = useState(0);
@@ -196,6 +216,13 @@ function MatchLiveContent() {
           const m = result.match;
           if (result.tournament?.name) setTournamentName(result.tournament.name);
           setMatchNumberText(`MATCH ${m.match_id}`);
+          if (result.venue?.name) setVenueName(`${result.venue.name}, ${result.venue.city || 'Mumbai'}`);
+          if (m.match_date) setMatchDateStr(new Date(m.match_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
+          if (m.toss_result) setTossResultStr(m.toss_result);
+          if (m.status === 'Completed') {
+            setIsMatchCompleted(true);
+            setCurrentView('scorecard');
+          }
 
           if (result.battingTeam?.name) setBattingTeamName(result.battingTeam.name);
           else if (result.team1?.name) setBattingTeamName(result.team1.name);
@@ -440,6 +467,22 @@ function MatchLiveContent() {
     setCurrentOverBalls(newCurrentOverBalls);
     setBowler(newBowler);
 
+    // Keep allBowlers in sync
+    setAllBowlers((prev) => {
+      const idx = prev.findIndex((b) => b.id === newBowler.id);
+      if (idx >= 0) {
+        const copy = [...prev];
+        copy[idx] = newBowler;
+        return copy;
+      }
+      return [...prev, newBowler];
+    });
+
+    // Check if target chased in Innings 2
+    if (inningsNo === 2 && innings1Data && newTotalRuns > innings1Data.totalRuns) {
+      showNotification(`Target achieved! ${battingTeamName} won the match!`);
+    }
+
     // Strike rotation logic
     const legalBallsThisOver = newCurrentOverBalls.filter(
       (b) => !b.toLowerCase().includes('wd') && !b.toLowerCase().includes('nb')
@@ -573,6 +616,28 @@ function MatchLiveContent() {
     setCurrentOverBalls(newCurrentOverBalls);
     setBowler(updatedBowler);
 
+    // Keep allBowlers in sync
+    setAllBowlers((prev) => {
+      const idx = prev.findIndex((b) => b.id === updatedBowler.id);
+      if (idx >= 0) {
+        const copy = [...prev];
+        copy[idx] = updatedBowler;
+        return copy;
+      }
+      return [...prev, updatedBowler];
+    });
+
+    // Track Extras category breakdown
+    if (extraName === 'WD') {
+      setExtras((prev) => ({ ...prev, wides: prev.wides + totalBallRuns, total: prev.total + totalBallRuns }));
+    } else if (extraName === 'NB') {
+      setExtras((prev) => ({ ...prev, noBalls: prev.noBalls + 1, total: prev.total + 1 }));
+    } else if (extraName === 'Bye') {
+      setExtras((prev) => ({ ...prev, byes: prev.byes + additionalRuns, total: prev.total + additionalRuns }));
+    } else if (extraName === 'Leg-Bye') {
+      setExtras((prev) => ({ ...prev, legByes: prev.legByes + additionalRuns, total: prev.total + additionalRuns }));
+    }
+
     // Check if over finished (only if legal ball)
     if (isLegalBall) {
       const legalBallsThisOver = newCurrentOverBalls.filter(
@@ -683,6 +748,34 @@ function MatchLiveContent() {
       showNotification(`Wicket! ${dismissedName} dismissed (${dismissalType}).`);
     }
 
+    // Record dismissed batter details for scorecard
+    const dismissedBatter = isRunOut && runOutBatter === 'nonStriker' ? nonStriker : striker;
+    const dismissalDesc = isRunOut
+      ? 'run out'
+      : dismissalType === 'Bowled'
+      ? `b ${bowler.name}`
+      : `${dismissalType} b ${bowler.name}`;
+
+    setDismissedBatters((prev) => [
+      ...prev,
+      {
+        ...dismissedBatter,
+        runs: isRunOut && runOutBatter === 'striker' ? striker.runs + runOutRunsCompleted : dismissedBatter.runs,
+        balls: dismissedBatter.balls + 1,
+        dismissal: dismissalDesc
+      }
+    ]);
+
+    setFallOfWickets((prev) => [
+      ...prev,
+      {
+        wicketNo: newTotalWickets,
+        score: newTotalRuns,
+        over: `${Math.floor(newLegalBalls / 6)}.${newLegalBalls % 6}`,
+        batterName: dismissedBatter.name
+      }
+    ]);
+
     // Remove chosen next batter from available bench
     setBattingSquad((prev) => prev.filter((p) => p.id !== nextBatter.id));
 
@@ -777,7 +870,8 @@ function MatchLiveContent() {
       role: 'Bowler'
     };
 
-    setBowler({
+    const existingBowler = allBowlers.find((b) => b.id === chosenBowler.id);
+    const bowlerToUse: BowlerScore = existingBowler || {
       id: chosenBowler.id,
       name: chosenBowler.name,
       overs: '0.0',
@@ -785,8 +879,10 @@ function MatchLiveContent() {
       maidens: 0,
       runs: 0,
       wickets: 0
-    });
+    };
 
+    setBowler(bowlerToUse);
+    setAllBowlers((prev) => (existingBowler ? prev : [...prev, bowlerToUse]));
     setCurrentOverBalls([]);
     setIsOverComplete(false);
     showNotification(`Over ${Math.floor(legalBalls / 6) + 1} started! Bowler: ${chosenBowler.name}`);
@@ -830,6 +926,170 @@ function MatchLiveContent() {
     } catch (err) {
       console.warn('Database ball sync fallback:', err);
     }
+  };
+
+  // Build live or recorded innings scorecard snapshot
+  const getLiveInningsSnapshot = (innNo: 1 | 2): InningsScorecardData => {
+    if (innNo === 1 && innings1Data) return innings1Data;
+    if (innNo === 2 && innings2Data) return innings2Data;
+
+    const currentBatters = [
+      ...dismissedBatters.map((b) => ({
+        id: b.id,
+        name: b.name,
+        dismissal: b.dismissal,
+        runs: b.runs,
+        balls: b.balls,
+        fours: b.fours,
+        sixes: b.sixes,
+        strikeRate: b.balls > 0 ? ((b.runs / b.balls) * 100).toFixed(1) : '0.0'
+      })),
+      {
+        id: striker.id,
+        name: striker.name,
+        dismissal: 'not out',
+        runs: striker.runs,
+        balls: striker.balls,
+        fours: striker.fours,
+        sixes: striker.sixes,
+        strikeRate: striker.balls > 0 ? ((striker.runs / striker.balls) * 100).toFixed(1) : '0.0'
+      },
+      {
+        id: nonStriker.id,
+        name: nonStriker.name,
+        dismissal: 'not out',
+        runs: nonStriker.runs,
+        balls: nonStriker.balls,
+        fours: nonStriker.fours,
+        sixes: nonStriker.sixes,
+        strikeRate: nonStriker.balls > 0 ? ((nonStriker.runs / nonStriker.balls) * 100).toFixed(1) : '0.0'
+      }
+    ];
+
+    const currentBowlerList = allBowlers.some((b) => b.id === bowler.id)
+      ? allBowlers.map((b) => (b.id === bowler.id ? bowler : b))
+      : [...allBowlers, bowler];
+
+    return {
+      inningNo: innNo,
+      teamName: innNo === 1 ? (innings1Data?.teamName || battingTeamName) : battingTeamName,
+      totalRuns,
+      totalWickets,
+      oversFormatted: `${Math.floor(legalBalls / 6)}.${legalBalls % 6}`,
+      runRate: legalBalls > 0 ? ((totalRuns / legalBalls) * 6).toFixed(2) : '0.00',
+      batters: currentBatters,
+      bowlers: currentBowlerList.map((bw) => ({
+        id: bw.id,
+        name: bw.name,
+        overs: bw.overs,
+        maidens: bw.maidens,
+        runs: bw.runs,
+        wickets: bw.wickets,
+        economy: bw.legalBalls > 0 ? ((bw.runs / bw.legalBalls) * 6).toFixed(2) : '0.00'
+      })),
+      extras,
+      didNotBat: battingSquad.map((p) => p.name),
+      fallOfWickets
+    };
+  };
+
+  // End 1st Innings Handler
+  const handleEndFirstInnings = () => {
+    const inn1Record = getLiveInningsSnapshot(1);
+    setInnings1Data(inn1Record);
+
+    const prevBatting = battingTeamName;
+    const prevBowling = bowlingTeamName;
+    setBattingTeamName(prevBowling);
+    setBowlingTeamName(prevBatting);
+
+    const prevBattingSquad = battingSquad;
+    const prevBowlingSquad = bowlingSquad;
+    setBattingSquad(prevBowlingSquad.slice(2));
+    setBowlingSquad(prevBattingSquad);
+
+    // Set Innings 2 Openers
+    if (prevBowlingSquad.length >= 2) {
+      setStriker({
+        id: prevBowlingSquad[0].id,
+        name: prevBowlingSquad[0].name,
+        runs: 0,
+        balls: 0,
+        fours: 0,
+        sixes: 0,
+        isStriker: true
+      });
+      setNonStriker({
+        id: prevBowlingSquad[1].id,
+        name: prevBowlingSquad[1].name,
+        runs: 0,
+        balls: 0,
+        fours: 0,
+        sixes: 0,
+        isStriker: false
+      });
+    }
+
+    // Set Innings 2 Opening Bowler
+    if (prevBattingSquad.length > 0) {
+      const openBowler = prevBattingSquad.find((p) => p.role === 'Bowler') || prevBattingSquad[0];
+      const initialBowler: BowlerScore = {
+        id: openBowler.id,
+        name: openBowler.name,
+        overs: '0.0',
+        legalBalls: 0,
+        maidens: 0,
+        runs: 0,
+        wickets: 0
+      };
+      setBowler(initialBowler);
+      setAllBowlers([initialBowler]);
+    } else {
+      setAllBowlers([]);
+    }
+
+    setInningsNo(2);
+    setTotalRuns(0);
+    setTotalWickets(0);
+    setLegalBalls(0);
+    setCurrentOverBalls([]);
+    setDismissedBatters([]);
+    setFallOfWickets([]);
+    setExtras({ wides: 0, noBalls: 0, byes: 0, legByes: 0, total: 0 });
+    setIsEndInningsModalOpen(false);
+
+    showNotification(`1st Innings concluded! Target for ${prevBowling}: ${inn1Record.totalRuns + 1} runs.`);
+  };
+
+  // End 2nd Innings Handler
+  const handleEndSecondInnings = () => {
+    const inn2Record = getLiveInningsSnapshot(2);
+    setInnings2Data(inn2Record);
+    setIsMatchCompleted(true);
+    setCurrentView('scorecard');
+    setIsEndInningsModalOpen(false);
+
+    try {
+      confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
+    } catch {}
+
+    // Complete in DB
+    try {
+      const winnerName = totalRuns > (innings1Data?.totalRuns ?? 0)
+        ? battingTeamName
+        : (innings1Data?.teamName ?? battingTeamName);
+
+      fetch('/api/match/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          match_id: parseInt(matchId, 10),
+          winner_team_name: winnerName
+        })
+      });
+    } catch {}
+
+    showNotification('Match Completed! Showing final scorecard.');
   };
 
   // Keyboard shortcut listener
@@ -919,6 +1179,16 @@ function MatchLiveContent() {
                   <Users className="w-3.5 h-3.5 text-slate-400" />
                   <span>{spectatorCount} watching</span>
                 </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowQueryStudio(true)}
+                  title="Execute any SQL query on database"
+                  className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded-full text-[11px] font-bold shadow-md shadow-blue-900/40 border border-blue-400/40 backdrop-blur-md transition active:scale-95 cursor-pointer"
+                >
+                  <Terminal className="w-3.5 h-3.5" />
+                  <span>SQL Query</span>
+                </button>
               </div>
             </div>
 
@@ -949,13 +1219,26 @@ function MatchLiveContent() {
                   </span>
                 </div>
 
-                {/* Bottom pill: CRR and Projected Score */}
+                {/* Bottom pill: CRR and Projected Score or Target */}
                 <div className="mt-2.5 inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-slate-900/80 backdrop-blur-md border border-white/10 text-[11px] sm:text-xs font-semibold text-slate-200">
-                  <span>CRR {crr}</span>
-                  <span className="text-slate-500">|</span>
-                  <span>
-                    Projected {projectedScore} ({totalOvers} ov)
-                  </span>
+                  {inningsNo === 2 && innings1Data ? (
+                    <>
+                      <span className="text-amber-400 font-bold">Target {innings1Data.totalRuns + 1}</span>
+                      <span className="text-slate-500">|</span>
+                      <span>
+                        Need {Math.max(0, (innings1Data.totalRuns + 1) - totalRuns)} off{' '}
+                        {Math.max(0, (totalOvers * 6) - legalBalls)}b
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <span>CRR {crr}</span>
+                      <span className="text-slate-500">|</span>
+                      <span>
+                        Projected {projectedScore} ({totalOvers} ov)
+                      </span>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -973,39 +1256,96 @@ function MatchLiveContent() {
         </div>
 
         {/* ========================================================================= */}
-        {/* 2. TOP ACTION BUTTONS BAR (Undo Last Ball & End Innings) */}
+        {/* 2. TOP ACTION BUTTONS BAR (View Switcher: Live Scoring vs Scorecard) */}
         {/* ========================================================================= */}
-        <div className="flex items-center justify-between">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-slate-900 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 shadow-2xs transition"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Match Setup</span>
-          </Link>
+        <div className="flex flex-wrap items-center justify-between gap-2.5">
+          <div className="flex items-center gap-2">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-slate-900 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 shadow-2xs transition"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Match Setup</span>
+            </Link>
+
+            {/* View Switcher: Live Scoring vs Scorecard */}
+            <div className="inline-flex p-1 bg-white border border-slate-200 rounded-xl shadow-2xs">
+              <button
+                type="button"
+                onClick={() => setCurrentView('scoring')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                  currentView === 'scoring'
+                    ? 'bg-[#0066FF] text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Activity className="w-3.5 h-3.5" />
+                <span>Live Scoring</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setCurrentView('scorecard')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                  currentView === 'scorecard'
+                    ? 'bg-[#0066FF] text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Trophy className="w-3.5 h-3.5 text-amber-500" />
+                <span>{isMatchCompleted ? 'Final Scorecard' : 'Full Scorecard'}</span>
+                {isMatchCompleted && (
+                  <span className="px-1.5 py-0.2 rounded text-[9px] bg-amber-400 text-slate-950 font-black">
+                    FINAL
+                  </span>
+                )}
+              </button>
+            </div>
+          </div>
 
           <div className="flex items-center gap-2.5">
-            {/* Undo Last Ball */}
-            <button
-              type="button"
-              onClick={handleUndoLastBall}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 text-xs sm:text-sm font-bold shadow-2xs transition cursor-pointer active:scale-95"
-            >
-              <RotateCcw className="w-4 h-4 text-slate-600" />
-              <span>Undo Last Ball</span>
-            </button>
+            {currentView === 'scoring' && (
+              <>
+                {/* Undo Last Ball */}
+                <button
+                  type="button"
+                  onClick={handleUndoLastBall}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 text-xs sm:text-sm font-bold shadow-2xs transition cursor-pointer active:scale-95"
+                >
+                  <RotateCcw className="w-4 h-4 text-slate-600" />
+                  <span>Undo</span>
+                </button>
 
-            {/* End Innings */}
-            <button
-              type="button"
-              onClick={() => setIsEndInningsModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-4 sm:px-5 py-2 rounded-xl bg-[#ff3b30] hover:bg-[#e03126] text-white text-xs sm:text-sm font-bold shadow-md hover:shadow-lg transition cursor-pointer active:scale-95"
-            >
-              <Flag className="w-4 h-4 fill-white" />
-              <span>End Innings</span>
-            </button>
+                {/* End Innings */}
+                <button
+                  type="button"
+                  onClick={() => setIsEndInningsModalOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-4 sm:px-5 py-2 rounded-xl bg-[#ff3b30] hover:bg-[#e03126] text-white text-xs sm:text-sm font-bold shadow-md hover:shadow-lg transition cursor-pointer active:scale-95"
+                >
+                  <Flag className="w-4 h-4 fill-white" />
+                  <span>{inningsNo === 1 ? 'End 1st Innings' : 'End Match'}</span>
+                </button>
+              </>
+            )}
           </div>
         </div>
+
+        {/* CONDITIONAL RENDER: Final Scorecard vs Live Scoring Controls */}
+        {currentView === 'scorecard' || isMatchCompleted ? (
+          <FinalScorecard
+            tournamentName={tournamentName}
+            matchNumberText={matchNumberText}
+            venueName={venueName}
+            matchDate={matchDateStr}
+            tossResult={tossResultStr}
+            innings1={innings1Data || getLiveInningsSnapshot(1)}
+            innings2={inningsNo === 2 || innings2Data ? (innings2Data || getLiveInningsSnapshot(2)) : null}
+            onOpenQueryStudio={() => setShowQueryStudio(true)}
+            onReturnToLive={() => setCurrentView('scoring')}
+            onNewMatch={() => router.push('/')}
+          />
+        ) : (
+          <>
 
         {/* ========================================================================= */}
         {/* 3. PLAYERS TRIO CARDS (Striker, Non-Striker, Bowler + Clean Dedicated Swap Strike) */}
@@ -1537,6 +1877,8 @@ function MatchLiveContent() {
             </button>
           </div>
         </div>
+          </>
+        )}
       </div>
 
       {/* ========================================================================= */}
@@ -1731,28 +2073,38 @@ function MatchLiveContent() {
                 type="button"
                 onClick={() => {
                   if (inningsNo === 1) {
-                    setInningsNo(2);
-                    // Swap teams
-                    const temp = battingTeamName;
-                    setBattingTeamName(bowlingTeamName);
-                    setBowlingTeamName(temp);
-                    setTotalRuns(0);
-                    setTotalWickets(0);
-                    setLegalBalls(0);
-                    setCurrentOverBalls([]);
-                    setIsEndInningsModalOpen(false);
-                    showNotification(`Innings 2 started! Target: ${totalRuns + 1} runs.`);
+                    handleEndFirstInnings();
                   } else {
-                    setIsEndInningsModalOpen(false);
-                    router.push('/');
+                    handleEndSecondInnings();
                   }
                 }}
                 className="px-5 py-2 text-xs sm:text-sm font-bold bg-red-600 hover:bg-red-700 text-white rounded-xl shadow-md transition cursor-pointer"
               >
-                Confirm End Innings
+                {inningsNo === 1 ? 'Confirm End Innings' : 'Confirm End Match & View Scorecard'}
               </button>
             </div>
           </div>
+        </div>
+      )}
+      {/* Persistent Floating Top-Right Query Trigger */}
+      <div className="fixed top-3.5 right-3.5 z-40">
+        <button
+          type="button"
+          onClick={() => setShowQueryStudio(true)}
+          title="Open SQL Query Studio (Execute any raw query)"
+          className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-[#0a1226]/90 hover:bg-blue-600 text-white text-xs font-bold border border-blue-500/40 hover:border-blue-300 shadow-xl shadow-blue-950/60 backdrop-blur-md transition group active:scale-95 cursor-pointer"
+        >
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <Terminal className="w-3.5 h-3.5 text-blue-400 group-hover:text-white transition" />
+          <span className="hidden sm:inline">Execute Query</span>
+          <span className="sm:hidden">SQL</span>
+        </button>
+      </div>
+
+      {/* SQL Query Studio Modal */}
+      {showQueryStudio && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/75 backdrop-blur-md animate-in fade-in duration-200">
+          <SqlQueryStudio isModal onClose={() => setShowQueryStudio(false)} />
         </div>
       )}
     </div>
